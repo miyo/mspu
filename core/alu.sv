@@ -32,7 +32,6 @@ module alu
 	    ALU_ADD : alu_r = a + b;
 	    ALU_SUB : alu_r = a - b;
 	    ALU_EQ  : alu_r = (a == b) ? 32'b1 : 32'b0;
-	    ALU_NOP : alu_r = a;
 	    default: unknown_op_r = 1;
 	endcase // case (op)
     end

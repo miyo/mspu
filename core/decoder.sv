@@ -19,14 +19,7 @@ module decoder
 
 `include "core.svh"
 
-/*
- *     +---------------------+--------+-----------+--------+-----------+
- * I:  |imm[11:0]            |rs1[4:0]|funct3[2:0]|rd[4:0] |opcode[6:0]|
- * S:  |imm[11:5]   |rs2[4:0]|rs1[4:0]|funct3[2:0]|imm[4:0]|opcode[6:0]|
- * R:  |funct7[11:5]|rs2[4:0]|rs1[4:0]|funct3[2:0]|rd[4:0] |opcode[6:0]|
- * U:  |imm[31:12]                                |rd[4:0] |opcode[6:0]|
- *     +---------------------+--------+-----------+--------+-----------+
- */
+    localparam R0 = 5'd0;
 
     localparam IMM_I = 3'd1;
     localparam IMM_S = 3'd2;
@@ -38,8 +31,8 @@ module decoder
     wire [6:0] opcode = insn[ 6: 0];
     assign rd     = insn[11: 7];
     wire [2:0] funct3 = insn[14:12];
-    assign rs1    = (imm_t == IMM_U) ? 5'd0 : insn[19:15];
-    assign rs2    = insn[24:20];
+    assign rs1    = (imm_t == IMM_U) ? R0 : insn[19:15];
+    assign rs2    = (imm_t == IMM_J) ? R0 : insn[24:20];
     wire [6:0] funct7 = insn[31:25];
 
     assign imm = imm_t==IMM_I ? {20'd0, insn[31:20]} :
@@ -58,8 +51,8 @@ module decoder
     assign mem_we     = param[10];
     assign mem_to_reg = param[9];
     assign alu_op     = param[8:5];
-    assign alu_src_a  = param[4];
-    assign alu_src_b  = param[3];
+    assign alu_src_a  = param[4]; // '0' -> rs1, '1' -> pc
+    assign alu_src_b  = param[3]; // '0' -> rs2, '1' -> imm
     assign alu_bytes  = param[2:1];
     assign reg_we     = param[0];
 
@@ -67,12 +60,12 @@ module decoder
 	casez(insn)
 	    BEQ  : param = {IMM_B, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_EQ,  1'b0, 1'b0, 2'b00, 1'b0};
 	    JALR : param = {IMM_I, 1'b0, 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b00, 1'b1};
-	    JAL  : param = {IMM_J, 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, ALU_NOP, 1'b1, 1'b0, 2'b00, 1'b1};
+	    JAL  : param = {IMM_J, 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b1, 1'b0, 2'b00, 1'b1};
 	    LUI  : param = {IMM_U, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b00, 1'b1};
 	    AUIPC: param = {IMM_U, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b1, 1'b1, 2'b00, 1'b1};
 	    ADDI : param = {IMM_I, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b00, 1'b1};
-	    LB   : param = {IMM_I, 1'b0, 1'b0, 1'b0, 1'b1, 1'b0, 1'b1, ALU_NOP, 1'b0, 1'b0, 2'b01, 1'b1};
-	    SB   : param = {3'd0,  1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b0, ALU_NOP, 1'b0, 1'b0, 2'b01, 1'b0};
+	    LB   : param = {IMM_I, 1'b0, 1'b0, 1'b0, 1'b1, 1'b0, 1'b1, ALU_ADD, 1'b0, 1'b1, 2'b01, 1'b1};
+	    SB   : param = {IMM_S, 1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b01, 1'b0};
 	endcase // case (insn)
     end
 
