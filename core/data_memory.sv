@@ -14,8 +14,13 @@ module data_memory#(parameter DEPTH = 12)
 
    input wire [31:0]  addr_b,
    input wire [31:0]  din_b,
-   input wire         we_b
+   input wire         we_b,
+
+   output wire [31:0] uart_dout,
+   output wire        uart_we
    );
+
+    localparam UART_ADDR = 32'h1000_0000;
 
     //(* ram_style = "block" *) logic [31:0] mem [2**DEPTH];
     logic [31:0] mem [2**DEPTH];
@@ -25,7 +30,12 @@ module data_memory#(parameter DEPTH = 12)
     
     logic [31:0] rd0, rd1, rd2, wd0, wd1, wd2, wm0, wm1;
     always_comb begin
-	rd0 = mem[addr[DEPTH-1+2:2]];
+
+	if(addr == UART_ADDR) begin
+	    rd0 = 32'h0;
+	end else begin
+	    rd0 = mem[addr[DEPTH-1+2:2]];
+	end
 
 	case(addr[1:0])
 	    2'b00:   rd1 = rd0;
@@ -90,11 +100,21 @@ module data_memory#(parameter DEPTH = 12)
     assign dout = rd2;
 
     always @(posedge clk) begin
-	if(we) begin
+	if(we && addr != UART_ADDR) begin
 	    mem[addr[DEPTH-1+2:2]] <= wd2;
 	end
 	if(we_b) begin
 	    mem[addr_b[DEPTH-1+2:2]] <= din_b;
+	end
+    end
+
+    // Peripheral
+    always_ff @(posedge clk) begin
+	if(we == 1 && addr == UART_ADDR) begin
+	    uart_dout <= wd2;
+	    uart_we <= 1'b1;
+	end else begin
+	    uart_we <= 1'b0;
 	end
     end
 

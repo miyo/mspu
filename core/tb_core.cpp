@@ -53,8 +53,10 @@ int main(int argc, char** argv) {
 
     tb->m_core->run = 1;
     while(tb->m_tickcount < 1000){
+        if(tb->m_core->uart_we == 1){
+            std::cout << (char)(tb->m_core->uart_dout);
+        }
         tb->tick();
     }
 
-    //dut->final();
 }

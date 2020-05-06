@@ -28,19 +28,19 @@ module decoder
  *     +---------------------+--------+-----------+--------+-----------+
  */
 
-    wire [6:0] opcode = insn[ 6: 0];
-    assign rd     = insn[11: 7];
-    wire [2:0] funct3 = insn[14:12];
-    assign rs1    = insn[19:15];
-    assign rs2    = insn[24:20];
-    wire [6:0] funct7 = insn[31:25];
-
     localparam IMM_I = 3'd1;
     localparam IMM_S = 3'd2;
     localparam IMM_U = 3'd3;
     localparam IMM_B = 3'd4;
     localparam IMM_J = 3'd5;
     wire [2:0] imm_t;
+
+    wire [6:0] opcode = insn[ 6: 0];
+    assign rd     = insn[11: 7];
+    wire [2:0] funct3 = insn[14:12];
+    assign rs1    = (imm_t == IMM_U) ? 5'd0 : insn[19:15];
+    assign rs2    = insn[24:20];
+    wire [6:0] funct7 = insn[31:25];
 
     assign imm = imm_t==IMM_I ? {20'd0, insn[31:20]} :
 		 imm_t==IMM_S ? {20'd0, insn[31:25], insn[11:7]} :
@@ -77,7 +77,7 @@ module decoder
 	    BEQ  : param = {IMM_B, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_EQ,  1'b0, 1'b0, 2'b00, 1'b0};
 	    JALR : param = {IMM_I, 1'b0, 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b00, 1'b1};
 	    JAL  : param = {IMM_J, 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, ALU_NOP, 1'b1, 1'b0, 2'b00, 1'b1};
-	    LUI  : param = {IMM_U, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_NOP, 1'b0, 1'b0, 2'b00, 1'b0};
+	    LUI  : param = {IMM_U, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b00, 1'b1};
 	    AUIPC: param = {IMM_U, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b1, 1'b1, 2'b00, 1'b1};
 	    ADDI : param = {IMM_I, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b00, 1'b1};
 	    LB   : param = {IMM_I, 1'b0, 1'b0, 1'b0, 1'b1, 1'b0, 1'b1, ALU_NOP, 1'b0, 1'b0, 2'b01, 1'b1};

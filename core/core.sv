@@ -12,7 +12,10 @@ module core
 
    input wire [31:0] data_addr,
    input wire [31:0] data_din,
-   input wire        data_we
+   input wire        data_we,
+
+   output wire [31:0] uart_dout,
+   output wire        uart_we
    );
 
     localparam START_ADDR = 32'h8000_0000;
@@ -105,7 +108,9 @@ module core
 	   .we(dmem_we),
 	   .addr_b(data_addr),
 	   .din_b(data_din),
-	   .we_b(data_we)
+	   .we_b(data_we),
+	   .uart_dout(uart_dout),
+	   .uart_we(uart_we)
 	   );
 
     assign reg_wdata = mem_to_reg ? dmem_rdata : alu_result;
