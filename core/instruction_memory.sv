@@ -14,7 +14,7 @@ module instruction_memory#(parameter DEPTH = 12)
    );
 
     logic [31:0] mem [2**DEPTH];
-    reg [31:0] dout;
+    logic [31:0] dout;
 
     assign insn = dout;
 
@@ -24,7 +24,10 @@ module instruction_memory#(parameter DEPTH = 12)
 	end
     end
 
-    assign dout = mem[pc[DEPTH-1+2:2]];
+    //assign dout = mem[pc[DEPTH-1+2:2]];
+    always@(posedge clk) begin
+	dout <= mem[pc[DEPTH-1+2:2]];
+    end
     
 endmodule // instruction_memory
 

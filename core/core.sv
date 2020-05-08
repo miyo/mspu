@@ -17,8 +17,6 @@ module core
    output wire [31:0] uart_dout,
    output wire        uart_we
    );
-
-    localparam START_ADDR = 32'h8000_0000;
     
     wire [31:0] insn;
     wire [31:0] reg_a, reg_b;
@@ -41,36 +39,23 @@ module core
     wire alu_src_a, alu_src_b;
     wire [1:0] alu_bytes;
 
-    // program counter
-    logic [31:0] pc = START_ADDR;
+    wire [31:0] pc;
+    wire pc_stall;
 
-    logic [31:0] npc;
-    logic pc_src;
-    always_comb begin
-	pc_src = (branch_en & alu_result[0]) | jal_en;
-	if(reset == 1'b1 || run == 1'b0)
-	  npc = START_ADDR;
-	else if(pc_src)
-	  npc = pc + shift_left_1_out;
-	else if(jalr_en)
-	  npc = alu_result + 4;
-	else
-	  npc = pc + 4;
-    end
-
-    always @(posedge clk) begin
-	pc <= npc;
-    end
-    
-    instruction_memory#(.DEPTH(12))
-    imem_i(.clk(clk),
-	 .reset(reset),
-	 .pc(pc),
-	 .insn(insn),
-	 .addr(insn_addr),
-	 .din(insn_din),
-	 .we(insn_we)
-	 );
+    instruction_fetch if_i(.clk(clk),
+			   .reset(reset),
+			   .run(run),
+			   .branch_en(branch_en),
+			   .alu_result(alu_result),
+			   .jal_en(jal_en),
+			   .jalr_en(jalr_en),
+			   .shift_left_1(shift_left_1_out),
+			   .pc_out(pc),
+			   .insn(insn),
+			   .insn_addr(insn_addr),
+			   .insn_din(insn_din),
+			   .insn_we(insn_we)
+			   );
     
     registers rf_i(.clk(clk),
 		   .reset(reset),
@@ -133,7 +118,8 @@ module core
 		      .imm(imm_value),
 		      .rs1(rs1),
 		      .rs2(rs2),
-		      .rd(rd)
+		      .rd(rd),
+		      .pc_stall(pc_stall)
 		      );
 
 endmodule // core

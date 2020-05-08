@@ -14,7 +14,8 @@ module decoder
    output wire [1:0] alu_bytes,
    output wire reg_we,
    output wire [31:0] imm,
-   output wire [4:0] rs1, rs2, rd
+   output wire [4:0] rs1, rs2, rd,
+   output wire pc_stall
    );
 
 `include "core.svh"
@@ -42,7 +43,8 @@ module decoder
 		 imm_t==IMM_J ? {3'b0, 8'h0, insn[31], insn[19:12], insn[20], insn[30:21], 1'b0} :
 		 32'd0;
 
-    wire [17:0] param;
+    wire [18:0] param;
+    assign pc_stall   = param[18];
     assign imm_t      = param[17:15];
     assign branch_en  = param[14];
     assign jal_en     = param[13];
@@ -58,14 +60,14 @@ module decoder
 
     always_comb begin
 	casez(insn)
-	    BEQ  : param = {IMM_B, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_EQ,  1'b0, 1'b0, 2'b00, 1'b0};
-	    JALR : param = {IMM_I, 1'b0, 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b00, 1'b1};
-	    JAL  : param = {IMM_J, 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b1, 1'b0, 2'b00, 1'b1};
-	    LUI  : param = {IMM_U, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b00, 1'b1};
-	    AUIPC: param = {IMM_U, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b1, 1'b1, 2'b00, 1'b1};
-	    ADDI : param = {IMM_I, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b00, 1'b1};
-	    LB   : param = {IMM_I, 1'b0, 1'b0, 1'b0, 1'b1, 1'b0, 1'b1, ALU_ADD, 1'b0, 1'b1, 2'b01, 1'b1};
-	    SB   : param = {IMM_S, 1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b01, 1'b0};
+	    BEQ  : param = {1'b0, IMM_B, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_EQ,  1'b0, 1'b0, 2'b00, 1'b0};
+	    JALR : param = {1'b0, IMM_I, 1'b0, 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b00, 1'b1};
+	    JAL  : param = {1'b0, IMM_J, 1'b0, 1'b1, 1'b0, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b1, 1'b0, 2'b00, 1'b1};
+	    LUI  : param = {1'b0, IMM_U, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b00, 1'b1};
+	    AUIPC: param = {1'b0, IMM_U, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b1, 1'b1, 2'b00, 1'b1};
+	    ADDI : param = {1'b0, IMM_I, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b00, 1'b1};
+	    LB   : param = {1'b0, IMM_I, 1'b0, 1'b0, 1'b0, 1'b1, 1'b0, 1'b1, ALU_ADD, 1'b0, 1'b1, 2'b01, 1'b1};
+	    SB   : param = {1'b0, IMM_S, 1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b01, 1'b0};
 	endcase // case (insn)
     end
 
