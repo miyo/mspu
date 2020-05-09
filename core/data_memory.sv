@@ -50,14 +50,14 @@ module data_memory#(parameter DEPTH = 12)
 	    .raddress(mem_raddr[3]), .dout(mem_dout[31:24]), .oe(mem_oe[3]),
 	    .waddress(mem_waddr[3]), .din(mem_din[31:24]), .we(mem_we[3]));
 
-    logic [31:0] dout;
     logic [31:0] rd0, rd1, wd0, wd1;
     logic [3:0] we0, we1;
 
-    assign dout = rd1;
-    assign reg_wdata = mem_to_reg_in ? dout : alu_result;
-    assign reg_we_out = reg_we_in;
-    assign reg_rd = rd_in;
+    always_comb begin
+	reg_wdata  = mem_to_reg_in ? rd1 : alu_result;
+	reg_we_out = reg_we_in;
+	reg_rd     = rd_in;
+    end
 
     always_comb begin
 	if(addr == UART_ADDR) begin

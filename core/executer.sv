@@ -34,6 +34,8 @@ module executer (
 		 output wire reg_we_out
 		 );
 
+    wire [31:0] alu_r;
+
     always_comb begin
     	mem_to_reg_out = mem_to_reg_in;
 	bytes_out = bytes_in;
@@ -42,10 +44,8 @@ module executer (
 	re_out = re_in;
 	rd_out = rd_in;
 	reg_we_out = reg_we_in;
+	alu_result = alu_r;
     end
-
-    wire [31:0] alu_r;
-    assign alu_result = alu_r;
 
     alu alu_i(.alu_op(alu_op),
 	      .a(alu_a),

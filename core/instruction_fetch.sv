@@ -21,7 +21,9 @@ module instruction_fetch#(parameter START_ADDR = 32'h8000_0000)
     logic [31:0] pc_prev = START_ADDR;
     logic [31:0] npc;
 
-    assign pc_out = pc;
+    always_comb begin
+	pc_out = pc;
+    end
 
     always_comb begin
 	if(reset == 1 || run == 0)
@@ -34,7 +36,6 @@ module instruction_fetch#(parameter START_ADDR = 32'h8000_0000)
 
     always @(posedge clk) begin
 	pc <= npc;
-	pc_prev <= pc;
     end
     
     instruction_memory#(.DEPTH(12))
