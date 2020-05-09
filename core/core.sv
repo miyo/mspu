@@ -57,21 +57,20 @@ module core
 
     logic if_stall, id_stall, ex_stall, mem_stall;
 
-    logic jump_insn;
-    logic jump_insn_reg;
     logic jump_reg;
     logic pc_in_en_reg;
     wire jump = branch_en | jal_en | jalr_en;
     always_ff @(posedge clk) begin
-	jump_insn_reg <= jump_insn;
 	jump_reg <= jump;
 	pc_in_en_reg <= pc_in_en;
     end
 
     always_comb begin
-	if_stall = (jump & ~jump_reg) || (pc_in_en & ~pc_in_en_reg);
-	id_stall = pc_in_en & ~pc_in_en_reg;
-	ex_stall = pc_in_en & ~pc_in_en_reg;
+	//if_stall = (jump & ~jump_reg) | (pc_in_en & ~pc_in_en_reg);
+	//id_stall = (pc_in_en & ~pc_in_en_reg);
+	if_stall = (jump & ~jump_reg);
+	id_stall = (jump & ~jump_reg);
+	ex_stall = 0;
 	mem_stall = 0;
     end
 
@@ -122,9 +121,7 @@ module core
 		      .mem_dout(dmem_wdata),
 		      // through
 		      .pc_out(pc_id),
-		      .run_out(run_id),
-
-		      .jump_insn(jump_insn)
+		      .run_out(run_id)
 		      );
 
     always_comb begin

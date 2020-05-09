@@ -45,6 +45,8 @@ module executer (
 		 );
 
     wire [31:0] alu_r;
+    wire [31:0] addr_out_i;
+    wire addr_out_en_i;
 
     always_ff @(posedge clk) begin
     	run_out <= run;
@@ -57,6 +59,11 @@ module executer (
     	    rd_out <= rd_in;
     	    reg_we_out <= reg_we_in;
     	    alu_result <= alu_r;
+    	    run_out <= 1'b1;
+	    addr_out <= addr_out_i;
+	    addr_out_en <= addr_out_en_i;
+	end else begin
+    	    run_out <= 1'b0;
 	end
     end
 
@@ -85,8 +92,8 @@ module executer (
 			  .branch_en(branch_en),
 			  .jal_en(jal_en),
 			  .jalr_en(jalr_en),
-			  .addr_out(addr_out),
-			  .addr_out_en(addr_out_en)
+			  .addr_out(addr_out_i),
+			  .addr_out_en(addr_out_en_i)
 			  );
 
 endmodule // executer

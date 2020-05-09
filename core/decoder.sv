@@ -31,9 +31,7 @@ module decoder
    output logic [4:0] rd_out,
    output logic [31:0] mem_dout,
    output logic [31:0] pc_out,
-   output logic run_out,
-
-   output logic jump_insn
+   output logic run_out
    );
 
     logic alu_src_a, alu_src_b;
@@ -52,10 +50,7 @@ module decoder
 
     logic [31:0] emit_insn;
 
-    assign jump_insn = branch_en_i | jal_en_i | jalr_en_i;
-
     always_ff @(posedge clk) begin
-    	run_out <= run;
 	if(run && !stall) begin
 	    emit_insn      <= insn;
     	    imm            <= imm_value;
@@ -75,6 +70,9 @@ module decoder
     	    alu_bytes      <= alu_bytes_i;
     	    reg_we_out     <= reg_we_out_i;
     	    rd_out         <= rd_out_i;
+    	    run_out <= 1'b1;
+	end else begin
+    	    run_out <= 1'b0;
 	end
     end
 

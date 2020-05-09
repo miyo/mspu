@@ -26,8 +26,10 @@ module instruction_fetch#(parameter START_ADDR = 32'h8000_0000)
     always_ff @(posedge clk) begin
 	if(run && !stall) begin
 	    pc_out <= pc;
-	    run_out <= run;
 	    pc <= npc;
+    	    run_out <= 1'b1;
+	end else begin
+    	    run_out <= 1'b0;
 	end
     end
 
