@@ -13,6 +13,8 @@ module simple_dualportram #( parameter WIDTH = 32, DEPTH = 10 )
 
     assign length = 2**DEPTH;
 
+//`define BRAM
+
 `ifdef BRAM
     (* ram_style = "block" *) reg [WIDTH-1:0] mem [2**DEPTH-1:0];
 `else
@@ -30,10 +32,10 @@ module simple_dualportram #( parameter WIDTH = 32, DEPTH = 10 )
 
 `ifdef BRAM
     always@(posedge clk) begin
-	dout <= mem[raddress[DEPTH-1:0]];
+	dout_r <= mem[raddress[DEPTH-1:0]];
     end
 `else
-    assign dout = mem[raddress[DEPTH-1:0]];
+    assign dout_r = mem[raddress[DEPTH-1:0]];
 `endif
     
 endmodule // simple_dualportram

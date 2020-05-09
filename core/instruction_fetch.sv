@@ -1,18 +1,19 @@
 module instruction_fetch#(parameter START_ADDR = 32'h8000_0000)
   (
+   // system
    input wire clk,
    input wire reset,
-   
    input wire run,
-
-   input wire [31:0] pc_in,
-   input wire pc_in_en,
-   output wire [31:0] pc_out,
-   output wire [31:0] insn,
-
    input wire [31:0] insn_addr,
    input wire [31:0] insn_din,
-   input wire        insn_we
+   input wire        insn_we,
+
+   // input
+   input wire [31:0] pc_in,
+   input wire pc_in_en,
+   // output
+   output wire [31:0] pc_out,
+   output wire [31:0] insn
    );
 
     // program counter

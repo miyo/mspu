@@ -2,20 +2,27 @@
 
 module data_memory#(parameter DEPTH = 12)
   (
+   // system
    input wire clk,
    input wire reset,
-
-   input wire [31:0]  addr,
-   input wire [1:0]   bytes,
-   input wire [31:0]  wdata,
-   input wire         we,
-   input wire         re,
-   output wire [31:0] rdata,
-
-   input wire [31:0]  addr_b,
-   input wire [31:0]  din_b,
-   input wire         we_b,
-
+   input wire [31:0] addr_b,
+   input wire [31:0] din_b,
+   input wire        we_b,
+   // input
+   input wire [31:0] addr,
+   input wire [1:0]  bytes,
+   input wire [31:0] wdata,
+   input wire        we,
+   input wire        re,
+   input wire        mem_to_reg_in,
+   input wire [31:0] alu_result,
+   input wire [4:0]  rd_in,
+   input wire        reg_we_in,
+   // output
+   output logic [31:0] reg_wdata,
+   output logic        reg_we_out,
+   output logic [4:0]  reg_rd,
+   // peripheral
    output wire [31:0] uart_dout,
    output wire        uart_we
    );
@@ -47,8 +54,10 @@ module data_memory#(parameter DEPTH = 12)
     logic [31:0] rd0, rd1, wd0, wd1;
     logic [3:0] we0, we1;
 
-    assign rdata = dout;
     assign dout = rd1;
+    assign reg_wdata = mem_to_reg_in ? dout : alu_result;
+    assign reg_we_out = reg_we_in;
+    assign reg_rd = rd_in;
 
     always_comb begin
 	if(addr == UART_ADDR) begin

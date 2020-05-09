@@ -7,9 +7,9 @@ module registers
    input wire run,
 
    input  wire [4:0]  raddr_a,
-   output wire [31:0] rdata_a,
    input  wire [4:0]  raddr_b,
-   output wire [31:0] rdata_b,
+   output logic [31:0] rdata_a,
+   output logic [31:0] rdata_b,
    
    input wire [4:0]  waddr,
    input wire [31:0] wdata,
@@ -18,8 +18,10 @@ module registers
 
     logic [31:0] mem [32];
 
-    assign rdata_a = mem[raddr_a];
-    assign rdata_b = mem[raddr_b];
+    always_comb begin
+	rdata_a = mem[raddr_a];
+	rdata_b = mem[raddr_b];
+    end
 
     always @(posedge clk) begin
 	if(reset == 0 && run == 1) begin
