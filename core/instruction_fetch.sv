@@ -4,6 +4,7 @@ module instruction_fetch#(parameter START_ADDR = 32'h8000_0000)
    input wire clk,
    input wire reset,
    input wire run,
+   input wire stall,
    input wire [31:0] insn_addr,
    input wire [31:0] insn_din,
    input wire        insn_we,
@@ -12,8 +13,9 @@ module instruction_fetch#(parameter START_ADDR = 32'h8000_0000)
    input wire [31:0] pc_in,
    input wire pc_in_en,
    // output
-   output wire [31:0] pc_out,
-   output wire [31:0] insn
+   output logic [31:0] pc_out,
+   output wire [31:0] insn,
+   output logic run_out
    );
 
     // program counter
@@ -21,8 +23,12 @@ module instruction_fetch#(parameter START_ADDR = 32'h8000_0000)
     logic [31:0] pc_prev = START_ADDR;
     logic [31:0] npc;
 
-    always_comb begin
-	pc_out = pc;
+    always_ff @(posedge clk) begin
+	if(run && !stall) begin
+	    pc_out <= pc;
+	    run_out <= run;
+	    pc <= npc;
+	end
     end
 
     always_comb begin
@@ -34,18 +40,15 @@ module instruction_fetch#(parameter START_ADDR = 32'h8000_0000)
 	  npc = pc + 4;
     end
 
-    always @(posedge clk) begin
-	pc <= npc;
-    end
     
     instruction_memory#(.DEPTH(12))
     imem_i(.clk(clk),
-	 .reset(reset),
-	 .pc(pc),
-	 .insn(insn),
-	 .addr(insn_addr),
-	 .din(insn_din),
-	 .we(insn_we)
-	 );
+	   .reset(reset),
+	   .pc(pc),
+	   .insn(insn),
+	   .addr(insn_addr),
+	   .din(insn_din),
+	   .we(insn_we)
+	   );
 
 endmodule // instruction_fetch

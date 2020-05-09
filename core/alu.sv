@@ -4,17 +4,17 @@ module alu
   (
    input wire [3:0] alu_op,
 
-   input wire [31:0] a,
-   input wire [31:0] b,
+   input wire signed [31:0] a,
+   input wire signed [31:0] b,
 
    output logic zero,
-   output logic [31:0] result,
+   output logic signed [31:0] result,
    output logic unknown_op
    );
 
 `include "core.svh"
 
-    logic [31:0] alu_r;
+    logic signed [31:0] alu_r;
     logic unknown_op_r;
 
     always_comb begin

@@ -34,14 +34,18 @@ module control
     wire [2:0] funct3 = insn[14:12];
     wire [6:0] funct7 = insn[31:25];
 
+    logic [31:0] LOW32  = 32'h0000_0000;
+    logic [31:0] HIGH32 = 32'hFFFF_FFFF;
+    logic [31:0] prefix;
     always_comb begin
 	imm_t = param[17:15];
+	prefix = (insn[31] == 1'b0) ? LOW32 : HIGH32;
 	case(imm_t)
-	    IMM_I : imm = {20'd0, insn[31:20]};
-	    IMM_S : imm = {20'd0, insn[31:25], insn[11:7]};
+	    IMM_I : imm = {prefix[19:0], insn[31:20]};
+	    IMM_S : imm = {prefix[19:0], insn[31:25], insn[11:7]};
 	    IMM_U : imm = {insn[31:12], 12'd0};
-	    IMM_B : imm = {19'd0, insn[31], insn[7], insn[30:25], insn[11:8], 1'b0};
-	    IMM_J : imm = {3'b0, 8'h0, insn[31], insn[19:12], insn[20], insn[30:21], 1'b0};
+	    IMM_B : imm = {prefix[18:0], insn[31], insn[7], insn[30:25], insn[11:8], 1'b0};
+	    IMM_J : imm = {prefix[10:0], insn[31], insn[19:12], insn[20], insn[30:21], 1'b0};
 	    default: imm = 32'd0;
 	endcase // case (imm_t)
 	

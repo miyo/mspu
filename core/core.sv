@@ -17,6 +17,8 @@ module core
    output wire [31:0] uart_dout,
    output wire        uart_we
    );
+
+    wire run_if, run_id, run_ex;
     
     wire [31:0] insn;
     wire [4:0]  rs1, rs2, rd;
@@ -50,11 +52,34 @@ module core
     wire [4:0] rd_ex;
     wire reg_we_ex;
 
+    logic [4:0] alu_rs1, alu_rs2;
+    logic [1:0] alu_a_src, alu_b_src;
+
+    logic if_stall, id_stall, ex_stall, mem_stall;
+
+    logic jump_insn;
+    logic jump_insn_reg;
+    logic jump_reg;
+    logic pc_in_en_reg;
+    wire jump = branch_en | jal_en | jalr_en;
+    always_ff @(posedge clk) begin
+	jump_insn_reg <= jump_insn;
+	jump_reg <= jump;
+	pc_in_en_reg <= pc_in_en;
+    end
+
+    always_comb begin
+	if_stall = (jump & ~jump_reg) || (pc_in_en & ~pc_in_en_reg);
+	id_stall = pc_in_en & ~pc_in_en_reg;
+	ex_stall = pc_in_en & ~pc_in_en_reg;
+	mem_stall = 0;
+    end
 
     // IF
     instruction_fetch if_i(.clk(clk),
 			   .reset(reset),
 			   .run(run),
+			   .stall(if_stall),
 			   .insn_addr(insn_addr),
 			   .insn_din(insn_din),
 			   .insn_we(insn_we),
@@ -63,13 +88,15 @@ module core
 			   .pc_in(pc_in),       // from EX
 			   // output
 			   .pc_out(pc),
-			   .insn(insn)
+			   .insn(insn),
+			   .run_out(run_if)
 			   );
 
-    // ID
+    // ID/WB
     decoder decoder_i(.clk(clk),
 		      .reset(reset),
-		      .run(run),
+		      .run(run_if),
+		      .stall(id_stall),
 		      // input
 		      .insn(insn), // from ID
 		      .pc(pc),     // from ID
@@ -86,19 +113,41 @@ module core
 		      .alu_op(alu_op),
 		      .alu_a(alu_a),
 		      .alu_b(alu_b),
+		      .alu_rs1(alu_rs1),
+		      .alu_rs2(alu_rs2),
 		      .alu_bytes(alu_bytes),
 		      .reg_we_out(reg_we),
 		      .imm(imm_value),
 		      .rd_out(rd),
 		      .mem_dout(dmem_wdata),
 		      // through
-		      .pc_out(pc_id)
+		      .pc_out(pc_id),
+		      .run_out(run_id),
+
+		      .jump_insn(jump_insn)
 		      );
+
+    always_comb begin
+	if(reg_we_ex && rd_ex != 0 && rd_ex == alu_rs1)
+	  alu_a_src = 2'd1;
+	else if(reg_we_out && reg_rd != 0 && reg_rd == alu_rs1)
+	  alu_a_src = 2'd2;
+	else
+	  alu_a_src = 2'd0;
+	
+	if(reg_we_ex && rd_ex != 0 && rd_ex == alu_rs2)
+	  alu_b_src = 2'd1;
+	else if(reg_we_out && reg_rd != 0 && reg_rd == alu_rs2)
+	  alu_b_src = 2'd2;
+	else
+	  alu_b_src = 2'd0;
+    end
 
     // EX
     executer ex_i(.clk(clk),
 		  .reset(reset),
-		  .run(run),
+		  .run(run_id),
+		  .stall(ex_stall),
 		  // input
 		  .alu_op(alu_op), // from ID
 		  .alu_a(alu_a),   // from ID
@@ -108,12 +157,22 @@ module core
 		  .branch_en(branch_en), // from ID
 		  .jal_en(jal_en),   // from ID
 		  .jalr_en(jalr_en), // from ID
+
+		  .alu_a_ex(alu_result),
+		  .alu_a_mem(reg_wdata),
+		  .alu_a_src(alu_a_src),
+
+		  .alu_b_ex(alu_result),
+		  .alu_b_mem(reg_wdata),
+		  .alu_b_src(alu_b_src),
+
 		  // output
 		  .alu_result(alu_result),
 		  .alu_unknown_op(alu_unknown_op),
 		  .addr_out(pc_in),
 		  .addr_out_en(pc_in_en),
 		  // through
+		  .run_out(run_ex),
 		  .mem_to_reg_in(mem_to_reg),
 		  .mem_to_reg_out(mem_to_reg_ex),
 		  .bytes_in(alu_bytes),
@@ -134,6 +193,8 @@ module core
     data_memory#(.DEPTH(12))
     dmem_i(.clk(clk),
 	   .reset(reset),
+	   .run(run_ex),
+	   .stall(mem_stall),
 	   .addr_b(data_addr),
 	   .din_b(data_din),
 	   .we_b(data_we),

@@ -6,6 +6,7 @@ module decoder
    input wire clk,
    input wire reset,
    input wire run,
+   input wire stall,
 
    // input
    input wire [31:0] insn,
@@ -22,12 +23,17 @@ module decoder
    output logic [3:0] alu_op,
    output logic [31:0] alu_a,
    output logic [31:0] alu_b,
+   output logic [4:0] alu_rs1,
+   output logic [4:0] alu_rs2,
    output logic [1:0] alu_bytes,
    output logic reg_we_out,
    output logic [31:0] imm,
    output logic [4:0] rd_out,
    output logic [31:0] mem_dout,
-   output logic [31:0] pc_out
+   output logic [31:0] pc_out,
+   output logic run_out,
+
+   output logic jump_insn
    );
 
     logic alu_src_a, alu_src_b;
@@ -44,23 +50,32 @@ module decoder
     logic reg_we_out_i;
     logic [4:0] rd_out_i;
 
-    always_comb begin
-	imm            = imm_value;
-	pc_out         = pc;
-	alu_a          = alu_src_a == 0 ? reg_a : pc;
-	alu_b          = alu_src_b == 0 ? reg_b : imm_value;
-	mem_dout       = reg_b;
+    logic [31:0] emit_insn;
 
-	branch_en      = branch_en_i;
-	jal_en         = jal_en_i;
-	jalr_en        = jalr_en_i;
-	mem_re         = mem_re_i;
-	mem_we         = mem_we_i;
-	mem_to_reg_out = mem_to_reg_out_i;
-	alu_op         = alu_op_i;
-	alu_bytes      = alu_bytes_i;
-	reg_we_out     = reg_we_out_i;
-	rd_out         = rd_out_i;
+    assign jump_insn = branch_en_i | jal_en_i | jalr_en_i;
+
+    always_ff @(posedge clk) begin
+    	run_out <= run;
+	if(run && !stall) begin
+	    emit_insn      <= insn;
+    	    imm            <= imm_value;
+    	    pc_out         <= pc;
+    	    alu_a          <= alu_src_a == 0 ? reg_a : pc;
+    	    alu_b          <= alu_src_b == 0 ? reg_b : imm_value;
+    	    mem_dout       <= reg_b;
+	    alu_rs1        <= rs1;
+	    alu_rs2        <= rs2;
+    	    branch_en      <= branch_en_i;
+    	    jal_en         <= jal_en_i;
+    	    jalr_en        <= jalr_en_i;
+    	    mem_re         <= mem_re_i;
+    	    mem_we         <= mem_we_i;
+    	    mem_to_reg_out <= mem_to_reg_out_i;
+    	    alu_op         <= alu_op_i;
+    	    alu_bytes      <= alu_bytes_i;
+    	    reg_we_out     <= reg_we_out_i;
+    	    rd_out         <= rd_out_i;
+	end
     end
 
     control control_i(.insn(insn),

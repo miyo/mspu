@@ -26,7 +26,7 @@ int main(int argc, char** argv) {
         0x100002b7, // lui   t0,0x10000
         0x00a28023, // sb    a0,0(t0)
         0x00008067, // ret
-        0x0000006f
+        0x0000006f  // j halt
     };
     std::vector<unsigned int> data = {
         0x6c6c6548,

@@ -5,6 +5,9 @@ module data_memory#(parameter DEPTH = 12)
    // system
    input wire clk,
    input wire reset,
+   input wire run,
+   input wire stall,
+
    input wire [31:0] addr_b,
    input wire [31:0] din_b,
    input wire        we_b,
@@ -53,13 +56,28 @@ module data_memory#(parameter DEPTH = 12)
     logic [31:0] rd0, rd1, wd0, wd1;
     logic [3:0] we0, we1;
 
-    always_comb begin
-	reg_wdata  = mem_to_reg_in ? rd1 : alu_result;
-	reg_we_out = reg_we_in;
-	reg_rd     = rd_in;
+    logic mem_to_reg_in_r;
+    logic [31:0] alu_result_r;
+
+    always_ff @(posedge clk) begin
+    	mem_to_reg_in_r <= mem_to_reg_in;
+    	alu_result_r <= alu_result;
+    	if(run)
+    	  reg_we_out <= reg_we_in;
+    	else
+    	  reg_we_out <= 1'b0;
+    	reg_rd <= rd_in;
+	reg_wdata  <= mem_to_reg_in ? rd1 : alu_result;
     end
 
     always_comb begin
+
+	mem_raddr[3] = addr[DEPTH-1:2];
+	mem_raddr[2] = addr[DEPTH-1:2];
+	mem_raddr[1] = addr[DEPTH-1:2];
+	mem_raddr[0] = addr[DEPTH-1:2];
+	mem_oe = 4'b1111;
+
 	if(addr == UART_ADDR) begin
 	    rd0 = 32'h0;
 	end else begin
@@ -81,12 +99,6 @@ module data_memory#(parameter DEPTH = 12)
     end
 
     always_comb begin
-
-	mem_raddr[3] = addr[DEPTH-1:2];
-	mem_raddr[2] = addr[DEPTH-1:2];
-	mem_raddr[1] = addr[DEPTH-1:2];
-	mem_raddr[0] = addr[DEPTH-1:2];
-	mem_oe = 4'b1111;
 
 	case(bytes)
 	    2'b00: begin

@@ -13,7 +13,7 @@ module simple_dualportram #( parameter WIDTH = 32, DEPTH = 10 )
 
     assign length = 2**DEPTH;
 
-//`define BRAM
+`define BRAM
 
 `ifdef BRAM
     (* ram_style = "block" *) reg [WIDTH-1:0] mem [2**DEPTH-1:0];

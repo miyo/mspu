@@ -16,12 +16,14 @@ module registers
    input wire reg_we
    );
 
-    logic [31:0] mem [32];
+    logic [31:0] mem [31:0];
 
     always_comb begin
 	rdata_a = mem[raddr_a];
 	rdata_b = mem[raddr_b];
     end
+
+    logic write_op_flag;
 
     always @(posedge clk) begin
 	if(reset == 0 && run == 1) begin
