@@ -40,16 +40,14 @@ module core
     wire [1:0] alu_bytes;
 
     wire [31:0] pc;
-    wire pc_stall;
+    logic [31:0] pc_in;
+    logic pc_in_en;
 
     instruction_fetch if_i(.clk(clk),
 			   .reset(reset),
 			   .run(run),
-			   .branch_en(branch_en),
-			   .alu_result(alu_result),
-			   .jal_en(jal_en),
-			   .jalr_en(jalr_en),
-			   .shift_left_1(shift_left_1_out),
+			   .pc_in_en(pc_in_en),
+			   .pc_in(pc_in),
 			   .pc_out(pc),
 			   .insn(insn),
 			   .insn_addr(insn_addr),
@@ -82,6 +80,16 @@ module core
 	      .unknown_op(alu_unknown_op)
 	      );
 
+    addr_calc addr_calc_i(.pc(pc),
+			  .imm(immgen_out),
+			  .alu_result(alu_result),
+			  .branch_en(branch_en),
+			  .jal_en(jal_en),
+			  .jalr_en(jalr_en),
+			  .addr_out(pc_in),
+			  .addr_out_en(pc_in_en)
+			  );
+
     data_memory#(.DEPTH(12))
     dmem_i(.clk(clk),
 	   .reset(reset),
@@ -101,7 +109,6 @@ module core
     assign reg_wdata = mem_to_reg ? dmem_rdata : alu_result;
 
     immgen immgen_i(.d(imm_value), .q(immgen_out));
-    shift_left_1 shift_left_1(.d(immgen_out), .q(shift_left_1_out));
 
     decoder decoder_i(.insn(insn),
 		      .branch_en(branch_en),
@@ -119,7 +126,7 @@ module core
 		      .rs1(rs1),
 		      .rs2(rs2),
 		      .rd(rd),
-		      .pc_stall(pc_stall)
+		      .pc_stall()
 		      );
 
 endmodule // core

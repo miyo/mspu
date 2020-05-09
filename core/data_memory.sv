@@ -22,96 +22,131 @@ module data_memory#(parameter DEPTH = 12)
 
     localparam UART_ADDR = 32'h1000_0000;
 
-    //(* ram_style = "block" *) logic [31:0] mem [2**DEPTH];
-    logic [31:0] mem [2**DEPTH];
-    reg [31:0] dout;
+    logic [DEPTH-2-1:0] mem_raddr[3:0], mem_waddr[3:0];
+    logic [31:0] mem_din, mem_dout;
+    logic [3:0] mem_we, mem_oe;
+
+    simple_dualportram#(.WIDTH(8), .DEPTH(DEPTH-2))
+    mem_i_0(.clk(clk), .reset(reset), .length(),
+	    .raddress(mem_raddr[0]), .dout(mem_dout[7:0]), .oe(mem_oe[0]),
+	    .waddress(mem_waddr[0]), .din(mem_din[7:0]), .we(mem_we[0]));
+    simple_dualportram#(.WIDTH(8), .DEPTH(DEPTH-2))
+    mem_i_1(.clk(clk), .reset(reset), .length(),
+	    .raddress(mem_raddr[1]), .dout(mem_dout[15:8]), .oe(mem_oe[1]),
+	    .waddress(mem_waddr[1]), .din(mem_din[15:8]), .we(mem_we[1]));
+    simple_dualportram#(.WIDTH(8), .DEPTH(DEPTH-2))
+    mem_i_2(.clk(clk), .reset(reset), .length(),
+	    .raddress(mem_raddr[2]), .dout(mem_dout[23:16]), .oe(mem_oe[2]),
+	    .waddress(mem_waddr[2]), .din(mem_din[23:16]), .we(mem_we[2]));
+    simple_dualportram#(.WIDTH(8), .DEPTH(DEPTH-2))
+    mem_i_3(.clk(clk), .reset(reset), .length(),
+	    .raddress(mem_raddr[3]), .dout(mem_dout[31:24]), .oe(mem_oe[3]),
+	    .waddress(mem_waddr[3]), .din(mem_din[31:24]), .we(mem_we[3]));
+
+    logic [31:0] dout;
+    logic [31:0] rd0, rd1, wd0, wd1;
+    logic [3:0] we0, we1;
 
     assign rdata = dout;
-    
-    logic [31:0] rd0, rd1, rd2, wd0, wd1, wd2, wm0, wm1;
-    always_comb begin
+    assign dout = rd1;
 
+    always_comb begin
 	if(addr == UART_ADDR) begin
 	    rd0 = 32'h0;
 	end else begin
-	    rd0 = mem[addr[DEPTH-1+2:2]];
+	    case(addr[1:0])
+		2'b00:   rd0 = mem_dout;
+		2'b01:   rd0 = { 8'h0, mem_dout[31:8]};
+		2'b10:   rd0 = {16'h0, mem_dout[31:16]};
+		2'b11:   rd0 = {24'h0, mem_dout[31:24]};
+		default: rd0 = mem_dout;
+	    endcase // case (addr[1:0])
 	end
-
-	case(addr[1:0])
-	    2'b00:   rd1 = rd0;
-	    2'b01:   rd1 = { 8'h0, rd0[31: 8]};
-	    2'b10:   rd1 = {16'h0, rd0[31:16]};
-	    2'b11:   rd1 = {24'h0, rd0[31:24]};
-	    default: rd1 = rd0;
-	endcase // case (addr[1:0])
 	
 	case(bytes)
-	    2'b00:   rd2 = rd1;
-	    2'b01:   rd2 = {24'h0, rd1[ 7: 0]};
-	    2'b10:   rd2 = {16'h0, rd1[15: 0]};
-	    default: rd2 = rd1;
+	    2'b00:   rd1 = rd0;
+	    2'b01:   rd1 = {24'h0, rd0[ 7: 0]};
+	    2'b10:   rd1 = {16'h0, rd0[15: 0]};
+	    default: rd1 = rd0;
 	endcase // case (bytes)
+    end
+
+    always_comb begin
+
+	mem_raddr[3] = addr[DEPTH-1:2];
+	mem_raddr[2] = addr[DEPTH-1:2];
+	mem_raddr[1] = addr[DEPTH-1:2];
+	mem_raddr[0] = addr[DEPTH-1:2];
+	mem_oe = 4'b1111;
 
 	case(bytes)
 	    2'b00: begin
 		wd0 = wdata;
-		wm0 = 32'h00000000;
+		we0 = 4'b1111;
 	    end
 	    2'b01: begin
 		wd0 = {24'h0,wdata[7:0]};
-		wm0 = 32'hFFFFFF00;
+		we0 = 4'b0001;
 	    end
 	    2'b10: begin
 		wd0 = {16'h0,wdata[15:0]};
-		wm0 = 32'hFFFF0000;
+		we0 = 4'b0011;
 	    end
 	    default: begin
 		wd0 = wdata;
-		wm0 = 32'h00000000;
+		we0 = 4'b1111;
 	    end
 	endcase // case (bytes)
 
 	case(addr[1:0])
 	    2'b00: begin
 		wd1 = wd0;
-		wm1 = wm0;
+		we1 = we0;
 	    end
 	    2'b01: begin
 		wd1 = {wd0[23:0], 8'h00};
-		wm1 = {wm0[23:0], 8'hFF};
+		we1 = {we0[2:0], 1'b0};
 	    end
 	    2'b10: begin
 		wd1 = {wd0[15:0], 16'h0000};
-		wm1 = {wm0[15:0], 16'hFFFF};
+		we1 = {we0[1:0], 2'b00};
 	    end
 	    2'b11: begin
 		wd1 = {wd0[7:0], 24'h000000};
-		wm1 = {wm0[7:0], 24'hFFFFFF};
+		we1 = {we0[0], 3'b000};
 	    end
 	    default: begin
 		wd1 = wd0;
-		wm1 = wm0;
+		we1 = we0;
 	    end
 	endcase
 
-	wd2 = (rd0 & wm1) | wd1;
     end
 
-    assign dout = rd2;
-
-    always @(posedge clk) begin
+    always_comb begin
 	if(we && addr != UART_ADDR) begin
-	    mem[addr[DEPTH-1+2:2]] <= wd2;
-	end
-	if(we_b) begin
-	    mem[addr_b[DEPTH-1+2:2]] <= din_b;
+	    mem_waddr[3] = addr[DEPTH-1:2];
+	    mem_waddr[2] = addr[DEPTH-1:2];
+	    mem_waddr[1] = addr[DEPTH-1:2];
+	    mem_waddr[0] = addr[DEPTH-1:2];
+	    mem_din = wd1;
+	    mem_we = we1;
+	end else if(we_b) begin
+	    mem_waddr[3] = addr_b[DEPTH-1:2];
+	    mem_waddr[2] = addr_b[DEPTH-1:2];
+	    mem_waddr[1] = addr_b[DEPTH-1:2];
+	    mem_waddr[0] = addr_b[DEPTH-1:2];
+	    mem_din = din_b;
+	    mem_we = 4'b1111;
+	end else begin
+	    mem_we = 4'b0000;
 	end
     end
 
     // Peripheral
     always_ff @(posedge clk) begin
 	if(we == 1 && addr == UART_ADDR) begin
-	    uart_dout <= wd2;
+	    uart_dout <= wd1;
 	    uart_we <= 1'b1;
 	end else begin
 	    uart_we <= 1'b0;
