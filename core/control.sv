@@ -26,20 +26,22 @@ module control
     localparam IMM_U = 3'd3;
     localparam IMM_B = 3'd4;
     localparam IMM_J = 3'd5;
-    wire [2:0] imm_t;
+    logic [2:0] imm_t;
 
-    wire [17:0] param;
+    logic [17:0] param;
 
+    /* verilator lint_off UNUSED */
     wire [6:0] opcode = insn[ 6: 0];
     wire [2:0] funct3 = insn[14:12];
     wire [6:0] funct7 = insn[31:25];
+    /* verilator lint_on UNUSED */
 
-    logic [31:0] LOW32  = 32'h0000_0000;
-    logic [31:0] HIGH32 = 32'hFFFF_FFFF;
-    logic [31:0] prefix;
+    logic [19:0] LOW20  = 20'h0_0000;
+    logic [19:0] HIGH20 = 20'hF_FFFF;
+    logic [19:0] prefix;
     always_comb begin
 	imm_t = param[17:15];
-	prefix = (insn[31] == 1'b0) ? LOW32 : HIGH32;
+	prefix = (insn[31] == 1'b0) ? LOW20 : HIGH20;
 	case(imm_t)
 	    IMM_I : imm = {prefix[19:0], insn[31:20]};
 	    IMM_S : imm = {prefix[19:0], insn[31:25], insn[11:7]};

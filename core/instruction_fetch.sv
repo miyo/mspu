@@ -20,7 +20,6 @@ module instruction_fetch#(parameter START_ADDR = 32'h8000_0000)
 
     // program counter
     logic [31:0] pc = START_ADDR;
-    logic [31:0] pc_prev = START_ADDR;
     logic [31:0] npc;
 
     always_ff @(posedge clk) begin

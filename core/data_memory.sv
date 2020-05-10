@@ -6,9 +6,13 @@ module data_memory#(parameter DEPTH = 12)
    input wire clk,
    input wire reset,
    input wire run,
+   /* verilator lint_off UNUSED */
    input wire stall,
+   /* verilator lint_on UNUSED */
 
+   /* verilator lint_off UNUSED */
    input wire [31:0] addr_b,
+   /* verilator lint_on UNUSED */
    input wire [31:0] din_b,
    input wire        we_b,
    // input
@@ -16,7 +20,9 @@ module data_memory#(parameter DEPTH = 12)
    input wire [1:0]  bytes,
    input wire [31:0] wdata,
    input wire        we,
+   /* verilator lint_off UNUSED */
    input wire        re,
+   /* verilator lint_on UNUSED */
    input wire        mem_to_reg_in,
    input wire [31:0] alu_result,
    input wire [4:0]  rd_in,
@@ -36,6 +42,7 @@ module data_memory#(parameter DEPTH = 12)
     logic [31:0] mem_din, mem_dout;
     logic [3:0] mem_we, mem_oe;
 
+    /* verilator lint_off PINCONNECTEMPTY */
     simple_dualportram#(.WIDTH(8), .DEPTH(DEPTH-2))
     mem_i_0(.clk(clk), .reset(reset), .length(),
 	    .raddress(mem_raddr[0]), .dout(mem_dout[7:0]), .oe(mem_oe[0]),
@@ -52,16 +59,12 @@ module data_memory#(parameter DEPTH = 12)
     mem_i_3(.clk(clk), .reset(reset), .length(),
 	    .raddress(mem_raddr[3]), .dout(mem_dout[31:24]), .oe(mem_oe[3]),
 	    .waddress(mem_waddr[3]), .din(mem_din[31:24]), .we(mem_we[3]));
+    /* verilator lint_on PINCONNECTEMPTY */
 
     logic [31:0] rd0, rd1, wd0, wd1;
     logic [3:0] we0, we1;
 
-    logic mem_to_reg_in_r;
-    logic [31:0] alu_result_r;
-
     always_ff @(posedge clk) begin
-    	mem_to_reg_in_r <= mem_to_reg_in;
-    	alu_result_r <= alu_result;
     	if(run)
     	  reg_we_out <= reg_we_in;
     	else

@@ -1,6 +1,8 @@
 module executer (
 		 input logic clk,
+		 /* verilator lint_off UNUSED */
 		 input logic reset,
+		 /* verilator lint_on UNUSED */
 		 input logic run,
 		 input logic stall,
 
@@ -78,6 +80,7 @@ module executer (
 		  alu_b;
     end
 
+    /* verilator lint_off PINCONNECTEMPTY */
     alu alu_i(.alu_op(alu_op),
 	      .a(alu_a_i),
 	      .b(alu_b_i),
@@ -85,6 +88,7 @@ module executer (
 	      .result(alu_r),
 	      .unknown_op(alu_unknown_op)
 	      );
+    /* verilator lint_on PINCONNECTEMPTY */
 
     addr_calc addr_calc_i(.pc(pc),
 			  .imm(imm_value),

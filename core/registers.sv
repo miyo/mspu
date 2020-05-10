@@ -23,8 +23,6 @@ module registers
 	rdata_b = mem[raddr_b];
     end
 
-    logic write_op_flag;
-
     always @(posedge clk) begin
 	if(reset == 0 && run == 1) begin
 	    if((reg_we == 1) && (waddr != 0)) begin

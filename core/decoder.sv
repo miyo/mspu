@@ -48,7 +48,9 @@ module decoder
     logic reg_we_out_i;
     logic [4:0] rd_out_i;
 
+    /* verilator lint_off UNUSED */
     logic [31:0] emit_insn;
+    /* verilator lint_on UNUSED */
 
     always_ff @(posedge clk) begin
 	if(run && !stall) begin

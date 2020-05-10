@@ -1,14 +1,18 @@
 module simple_dualportram #( parameter WIDTH = 32, DEPTH = 10 )
    (
     input wire 		    clk,
+    /* verilator lint_off UNUSED */
     input wire 		    reset,
+    /* verilator lint_on UNUSED */
     output wire [31:0] 	    length,
     input wire  [DEPTH-1:0] raddress,
     input wire  [DEPTH-1:0] waddress,
     input wire  [WIDTH-1:0] din,
     output wire [WIDTH-1:0] dout,
     input wire 		    we,
+    /* verilator lint_off UNUSED */
     input wire 		    oe
+    /* verilator lint_on UNUSED */
     );
 
     assign length = 2**DEPTH;

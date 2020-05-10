@@ -21,22 +21,21 @@ module core
     wire run_if, run_id, run_ex;
     
     wire [31:0] insn;
-    wire [4:0]  rs1, rs2, rd;
+    wire [4:0]  rd;
     wire [4:0] reg_rd;
     wire [31:0] reg_wdata;
     wire [31:0] alu_a, alu_b;
     wire [31:0] alu_result;
+    /* verilator lint_off UNUSED */
     wire        alu_unknown_op;
-    wire [31:0] dmem_rdata;
+    /* verilator lint_on UNUSED */
     wire [31:0] imm_value;
-    wire [31:0] immgen_out;
-    wire [31:0] shift_left_1_out;
 
     wire [3:0] alu_op;
     wire reg_we, reg_we_out;
     wire dmem_we, dmem_re;
     wire [31:0] dmem_wdata;
-    wire mem_to_reg, mem_to_reg_in;
+    wire mem_to_reg;
     wire branch_en, jal_en, jalr_en;
     wire [1:0] alu_bytes;
 
@@ -58,16 +57,12 @@ module core
     logic if_stall, id_stall, ex_stall, mem_stall;
 
     logic jump_reg;
-    logic pc_in_en_reg;
     wire jump = branch_en | jal_en | jalr_en;
     always_ff @(posedge clk) begin
 	jump_reg <= jump;
-	pc_in_en_reg <= pc_in_en;
     end
 
     always_comb begin
-	//if_stall = (jump & ~jump_reg) | (pc_in_en & ~pc_in_en_reg);
-	//id_stall = (pc_in_en & ~pc_in_en_reg);
 	if_stall = (jump & ~jump_reg);
 	id_stall = (jump & ~jump_reg);
 	ex_stall = 0;
