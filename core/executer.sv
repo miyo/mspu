@@ -50,23 +50,43 @@ module executer (
     wire [31:0] addr_out_i;
     wire addr_out_en_i;
 
+    logic [1:0] state = 0;
+    logic [2:0] stall_counter;
+
     always_ff @(posedge clk) begin
     	run_out <= run;
-	if(run && !stall) begin
-    	    mem_to_reg_out <= mem_to_reg_in;
-    	    bytes_out <= bytes_in;
-    	    wdata_out <= wdata_in;
-    	    we_out <= we_in;
-    	    re_out <= re_in;
-    	    rd_out <= rd_in;
-    	    reg_we_out <= reg_we_in;
-    	    alu_result <= alu_r;
-    	    run_out <= 1'b1;
-	    addr_out <= addr_out_i;
-	    addr_out_en <= addr_out_en_i;
-	end else begin
-    	    run_out <= 1'b0;
-	end
+	case(state)
+	    0: begin
+		if(run && !stall) begin
+    		    mem_to_reg_out <= mem_to_reg_in;
+    		    bytes_out <= bytes_in;
+    		    wdata_out <= wdata_in;
+    		    we_out <= we_in;
+    		    re_out <= re_in;
+    		    rd_out <= rd_in;
+    		    reg_we_out <= reg_we_in;
+    		    alu_result <= alu_r;
+		    addr_out <= addr_out_i;
+		    addr_out_en <= addr_out_en_i;
+		    if(addr_out_en_i == 1) begin
+			state <= state + 1;
+			stall_counter <= 2;
+		    end
+		end else begin
+		end
+	    end
+	    1: begin
+		addr_out_en <= 1'b0;
+		if(stall_counter == 0) begin
+		    state <= 0;
+		end else begin
+		    stall_counter <= stall_counter - 1;
+		end
+	    end
+	    default: begin
+		state <= 0;
+	    end
+	endcase
     end
 
     logic [31:0] alu_a_i, alu_b_i;

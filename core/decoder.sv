@@ -31,7 +31,9 @@ module decoder
    output logic [4:0] rd_out,
    output logic [31:0] mem_dout,
    output logic [31:0] pc_out,
-   output logic run_out
+   output logic run_out,
+
+   output logic mem_hazard
    );
 
     logic alu_src_a, alu_src_b;
@@ -52,30 +54,71 @@ module decoder
     logic [31:0] emit_insn;
     /* verilator lint_on UNUSED */
 
+    logic [1:0] state = 0;
+
+    logic [1:0] stall_mem = 0;
+    logic [1:0] stall_ctrl = 0;
+
+
+    assign mem_hazard = mem_to_reg_out_i;
+
     always_ff @(posedge clk) begin
-	if(run && !stall) begin
-	    emit_insn      <= insn;
-    	    imm            <= imm_value;
-    	    pc_out         <= pc;
-    	    alu_a          <= alu_src_a == 0 ? reg_a : pc;
-    	    alu_b          <= alu_src_b == 0 ? reg_b : imm_value;
-    	    mem_dout       <= reg_b;
-	    alu_rs1        <= rs1;
-	    alu_rs2        <= rs2;
-    	    branch_en      <= branch_en_i;
-    	    jal_en         <= jal_en_i;
-    	    jalr_en        <= jalr_en_i;
-    	    mem_re         <= mem_re_i;
-    	    mem_we         <= mem_we_i;
-    	    mem_to_reg_out <= mem_to_reg_out_i;
-    	    alu_op         <= alu_op_i;
-    	    alu_bytes      <= alu_bytes_i;
-    	    reg_we_out     <= reg_we_out_i;
-    	    rd_out         <= rd_out_i;
-    	    run_out <= 1'b1;
-	end else begin
-    	    run_out <= 1'b0;
-	end
+    	run_out <= run;
+
+	case(state)
+	    0: begin
+		if(run && !stall) begin
+		    emit_insn      <= insn;
+    		    imm            <= imm_value;
+    		    pc_out         <= pc;
+    		    alu_a          <= alu_src_a == 0 ? reg_a : pc;
+    		    alu_b          <= alu_src_b == 0 ? reg_b : imm_value;
+    		    mem_dout       <= reg_b;
+		    alu_rs1        <= rs1;
+		    alu_rs2        <= rs2;
+    		    branch_en      <= branch_en_i;
+    		    jal_en         <= jal_en_i;
+    		    jalr_en        <= jalr_en_i;
+    		    mem_re         <= mem_re_i;
+    		    mem_we         <= mem_we_i;
+    		    mem_to_reg_out <= mem_to_reg_out_i;
+    		    alu_op         <= alu_op_i;
+    		    alu_bytes      <= alu_bytes_i;
+    		    reg_we_out     <= reg_we_out_i;
+    		    rd_out         <= rd_out_i;
+
+    		    if(branch_en_i | jal_en_i | jalr_en_i) begin
+			state <= state + 1;
+			stall_ctrl <= 2;
+    		    end if(mem_to_reg_out_i) begin
+			state <= state + 1;
+			stall_mem <= 1;
+		    end
+
+		end else begin
+
+		end
+	    end
+	    1: begin
+    		rd_out         <= 0;
+    		mem_to_reg_out <= 0;
+    		branch_en      <= 0;
+    		jal_en         <= 0;
+    		jalr_en        <= 0;
+		if(stall_mem > 0) begin
+		    stall_mem <= stall_mem -1;
+		end else if(stall_ctrl > 0) begin
+		    stall_ctrl <= stall_ctrl - 1;
+		end else begin
+		    state <= 0;
+		end
+	    end
+
+	    default: begin
+		state <= 0;
+	    end
+	endcase // case (state)
+
     end
 
     control control_i(.insn(insn),

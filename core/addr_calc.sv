@@ -20,7 +20,13 @@ module addr_calc
     end
     
     always_comb begin
-	if((branch_en & alu_result[0]) | jal_en) begin
+	if(branch_en) begin
+	    npc_en = 1'b1;
+	    if(alu_result[0])
+	      npc = pc + imm;
+	    else
+	      npc = pc + 4;
+	end else if(jal_en) begin
 	    npc = pc + imm;
 	    npc_en = 1'b1;
 	end else if(jalr_en) begin
