@@ -32,8 +32,8 @@ module data_memory#(parameter DEPTH = 12)
    output logic        reg_we_out,
    output logic [4:0]  reg_rd,
    // peripheral
-   output wire [31:0] uart_dout,
-   output wire        uart_we
+   output logic [31:0] uart_dout,
+   output logic        uart_we
    );
 
     localparam UART_ADDR = 32'h1000_0000;

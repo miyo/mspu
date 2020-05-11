@@ -8,7 +8,7 @@ module instruction_memory#(parameter DEPTH = 12)
    /* verilator lint_off UNUSED */
    input  wire [31:0] pc,
    /* verilator lint_on UNUSED */
-   output wire [31:0] insn,
+   output logic [31:0] insn,
 
    /* verilator lint_off UNUSED */
    input wire [31:0] addr,

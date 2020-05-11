@@ -18,6 +18,13 @@ module registers
 
     logic [31:0] mem [31:0];
 
+    integer i;
+    initial begin
+	for(i = 0; i < 32; i=i+1) begin
+	    mem[i] = 32'd0;
+	end
+    end
+
     always_comb begin
 	rdata_a = mem[raddr_a];
 	rdata_b = mem[raddr_b];
