@@ -25,6 +25,7 @@ module core
     wire [4:0] reg_rd;
     wire [31:0] reg_wdata;
     wire [31:0] alu_a, alu_b;
+    wire [31:0] alu_a_id, alu_b_id;
     wire [31:0] alu_result;
     /* verilator lint_off UNUSED */
     wire        alu_unknown_op;
@@ -53,7 +54,6 @@ module core
     wire reg_we_ex;
 
     logic [4:0] alu_rs1, alu_rs2;
-    logic [1:0] alu_a_src, alu_b_src;
 
     logic if_stall, id_stall, ex_stall, mem_stall;
 
@@ -105,8 +105,8 @@ module core
 		      .mem_we(dmem_we),
 		      .mem_to_reg_out(mem_to_reg),
 		      .alu_op(alu_op),
-		      .alu_a(alu_a),
-		      .alu_b(alu_b),
+		      .alu_a(alu_a_id),
+		      .alu_b(alu_b_id),
 		      .alu_rs1(alu_rs1),
 		      .alu_rs2(alu_rs2),
 		      .alu_bytes(alu_bytes),
@@ -122,21 +122,22 @@ module core
 		      .mem_hazard(mem_hazard)
 		      );
 
-    always_comb begin
-	if(reg_we_ex && rd_ex != 0 && rd_ex == alu_rs1)
-	  alu_a_src = 2'd1;
-	else if(reg_we_out && reg_rd != 0 && reg_rd == alu_rs1)
-	  alu_a_src = 2'd2;
-	else
-	  alu_a_src = 2'd0;
-	
-	if(reg_we_ex && rd_ex != 0 && rd_ex == alu_rs2)
-	  alu_b_src = 2'd1;
-	else if(reg_we_out && reg_rd != 0 && reg_rd == alu_rs2)
-	  alu_b_src = 2'd2;
-	else
-	  alu_b_src = 2'd0;
-    end
+    data_forwarding data_forwarding_i (.rs1_id(alu_rs1), // from ID
+				       .rs2_id(alu_rs2), // from ID
+				       .rd_ex(rd_ex),         // from EX
+				       .reg_we_ex(reg_we_ex), // from EX
+				       .rd_ma(reg_rd),         // from MA
+				       .reg_we_ma(reg_we_out), // from MA
+
+				       .alu_a_id(alu_a_id), // from ID
+				       .alu_b_id(alu_b_id), // from ID
+
+				       .alu_result(alu_result), // from EX
+				       .reg_wdata(reg_wdata), // from MA
+
+				       .alu_a(alu_a), // to EX
+				       .alu_b(alu_b)  // to EX
+				       );
 
     // EX
     executer ex_i(.clk(clk),
@@ -152,14 +153,6 @@ module core
 		  .branch_en(branch_en), // from ID
 		  .jal_en(jal_en),   // from ID
 		  .jalr_en(jalr_en), // from ID
-
-		  .alu_a_ex(alu_result),
-		  .alu_a_mem(reg_wdata),
-		  .alu_a_src(alu_a_src),
-
-		  .alu_b_ex(alu_result),
-		  .alu_b_mem(reg_wdata),
-		  .alu_b_src(alu_b_src),
 
 		  .unsigned_flag(unsigned_flag),
 

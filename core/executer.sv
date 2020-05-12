@@ -16,14 +16,6 @@ module executer (
 		 input logic jal_en,
 		 input logic jalr_en,
 
-		 input logic [31:0] alu_a_ex,
-		 input logic [31:0] alu_a_mem,
-		 input logic [1:0]  alu_a_src,
-
-		 input logic [31:0] alu_b_ex,
-		 input logic [31:0] alu_b_mem,
-		 input logic [1:0]  alu_b_src,
-
 		 input logic unsigned_flag,
 
 		 output logic [31:0] alu_result,
@@ -93,21 +85,10 @@ module executer (
 	endcase
     end
 
-    logic [31:0] alu_a_i, alu_b_i;
-
-    always_comb begin
-	alu_a_i = alu_a_src == 2'd1 ? alu_a_ex :
-		  alu_a_src == 2'd2 ? alu_a_mem :
-		  alu_a;
-	alu_b_i = alu_b_src == 2'd1 ? alu_b_ex :
-		  alu_b_src == 2'd2 ? alu_b_mem :
-		  alu_b;
-    end
-
     /* verilator lint_off PINCONNECTEMPTY */
     alu alu_i(.alu_op(alu_op),
-	      .a(alu_a_i),
-	      .b(alu_b_i),
+	      .a(alu_a),
+	      .b(alu_b),
 	      .unsigned_flag(unsigned_flag),
 	      .zero(),
 	      .result(alu_r),
