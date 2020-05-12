@@ -4,9 +4,13 @@
  ******************************************************/
 localparam ALU_AND = 4'b0000;
 localparam ALU_OR  = 4'b0001;
-localparam ALU_ADD = 4'b0010;
-localparam ALU_SUB = 4'b0110;
-localparam ALU_EQ  = 4'b0111;
+localparam ALU_XOR = 4'b0010;
+localparam ALU_ADD = 4'b0100;
+localparam ALU_SUB = 4'b0101;
+localparam ALU_EQ  = 4'b1000;
+localparam ALU_NE  = 4'b1001;
+localparam ALU_LT  = 4'b1010;
+localparam ALU_GE  = 4'b1011;
 
 /******************************************************
  * ISA

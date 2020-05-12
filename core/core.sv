@@ -38,6 +38,7 @@ module core
     wire mem_to_reg;
     wire branch_en, jal_en, jalr_en;
     wire [1:0] alu_bytes;
+    wire unsigned_flag, unsigned_flag_ex;
 
     wire [31:0] pc, pc_id;
     wire [31:0] pc_in;
@@ -112,6 +113,7 @@ module core
 		      .reg_we_out(reg_we),
 		      .imm(imm_value),
 		      .rd_out(rd),
+		      .unsigned_flag(unsigned_flag),
 		      .mem_dout(dmem_wdata),
 		      // through
 		      .pc_out(pc_id),
@@ -159,6 +161,8 @@ module core
 		  .alu_b_mem(reg_wdata),
 		  .alu_b_src(alu_b_src),
 
+		  .unsigned_flag(unsigned_flag),
+
 		  // output
 		  .alu_result(alu_result),
 		  .alu_unknown_op(alu_unknown_op),
@@ -179,7 +183,8 @@ module core
 		  .rd_in(rd),
 		  .rd_out(rd_ex),
 		  .reg_we_in(reg_we),
-		  .reg_we_out(reg_we_ex)
+		  .reg_we_out(reg_we_ex),
+		  .unsigned_flag_out(unsigned_flag_ex)
 		  );
 
     // MEM
@@ -201,6 +206,7 @@ module core
 	   .alu_result(alu_result), // from EX
 	   .rd_in(rd_ex),         // from EX
 	   .reg_we_in(reg_we_ex), // from EX
+	   .unsigned_flag(unsigned_flag_ex),
 	   // output
 	   .reg_wdata(reg_wdata),
 	   .reg_we_out(reg_we_out),

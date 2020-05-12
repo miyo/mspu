@@ -27,6 +27,7 @@ module data_memory#(parameter DEPTH = 12)
    input wire [31:0] alu_result,
    input wire [4:0]  rd_in,
    input wire        reg_we_in,
+   input wire        unsigned_flag,
    // output
    output logic [31:0] reg_wdata,
    output logic        reg_we_out,
@@ -64,17 +65,25 @@ module data_memory#(parameter DEPTH = 12)
     logic [31:0] rd0, rd1, wd0, wd1;
     logic [3:0] we0, we1;
 
+    logic [31:0] alu_result_r;
+    logic mem_to_reg_in_r;
+
     always_ff @(posedge clk) begin
     	if(run)
     	  reg_we_out <= reg_we_in;
     	else
     	  reg_we_out <= 1'b0;
     	reg_rd <= rd_in;
-	reg_wdata  <= mem_to_reg_in ? rd1 : alu_result;
+	mem_to_reg_in_r <= mem_to_reg_in;
+	alu_result_r <= alu_result;
     end
+    assign reg_wdata = mem_to_reg_in_r ? rd1 : alu_result_r;
+
+    logic [23:0] L24 = 24'h000000;
+    logic [23:0] H24 = 24'hFFFFFF;
+    logic [23:0] pa0, pa1;
 
     always_comb begin
-
 	mem_raddr[3] = addr[DEPTH-1:2];
 	mem_raddr[2] = addr[DEPTH-1:2];
 	mem_raddr[1] = addr[DEPTH-1:2];
@@ -84,19 +93,26 @@ module data_memory#(parameter DEPTH = 12)
 	if(addr == UART_ADDR) begin
 	    rd0 = 32'h0;
 	end else begin
+	    pa0 = unsigned_flag ? L24 : mem_dout[31] ? H24 : L24;
 	    case(addr[1:0])
 		2'b00:   rd0 = mem_dout;
-		2'b01:   rd0 = { 8'h0, mem_dout[31:8]};
-		2'b10:   rd0 = {16'h0, mem_dout[31:16]};
-		2'b11:   rd0 = {24'h0, mem_dout[31:24]};
+		2'b01:   rd0 = {pa0[ 7:0], mem_dout[31:8]};
+		2'b10:   rd0 = {pa0[15:0], mem_dout[31:16]};
+		2'b11:   rd0 = {pa0[23:0], mem_dout[31:24]};
 		default: rd0 = mem_dout;
 	    endcase // case (addr[1:0])
 	end
 	
 	case(bytes)
-	    2'b00:   rd1 = rd0;
-	    2'b01:   rd1 = {24'h0, rd0[ 7: 0]};
-	    2'b10:   rd1 = {16'h0, rd0[15: 0]};
+	    2'b00: rd1 = rd0;
+	    2'b01: begin
+		pa1 = unsigned_flag ? L24 : rd0[7] ? H24 : L24;
+		rd1 = {pa1[23:0], rd0[ 7: 0]};
+	    end
+	    2'b10: begin
+		pa1 = unsigned_flag ? L24 : rd0[15] ? H24 : L24;
+		rd1 = {pa1[15:0], rd0[15: 0]};
+	    end
 	    default: rd1 = rd0;
 	endcase // case (bytes)
     end

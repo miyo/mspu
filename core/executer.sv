@@ -24,6 +24,8 @@ module executer (
 		 input logic [31:0] alu_b_mem,
 		 input logic [1:0]  alu_b_src,
 
+		 input logic unsigned_flag,
+
 		 output logic [31:0] alu_result,
 		 output logic alu_unknown_op,
 		 output logic [31:0] addr_out,
@@ -43,7 +45,8 @@ module executer (
 		 input  logic [4:0] rd_in,
 		 output logic [4:0] rd_out,
 		 input  logic reg_we_in,
-		 output logic reg_we_out
+		 output logic reg_we_out,
+		 output logic unsigned_flag_out
 		 );
 
     wire [31:0] alu_r;
@@ -68,6 +71,7 @@ module executer (
     		    alu_result <= alu_r;
 		    addr_out <= addr_out_i;
 		    addr_out_en <= addr_out_en_i;
+		    unsigned_flag_out <= unsigned_flag;
 		    if(addr_out_en_i == 1) begin
 			state <= state + 1;
 			stall_counter <= 2;
@@ -104,6 +108,7 @@ module executer (
     alu alu_i(.alu_op(alu_op),
 	      .a(alu_a_i),
 	      .b(alu_b_i),
+	      .unsigned_flag(unsigned_flag),
 	      .zero(),
 	      .result(alu_r),
 	      .unknown_op(alu_unknown_op)

@@ -29,10 +29,12 @@ module decoder
    output logic reg_we_out,
    output logic [31:0] imm,
    output logic [4:0] rd_out,
+   output logic unsigned_flag,
+
    output logic [31:0] mem_dout,
    output logic [31:0] pc_out,
-   output logic run_out,
 
+   output logic run_out,
    output logic mem_hazard
    );
 
@@ -49,6 +51,7 @@ module decoder
     logic [1:0] alu_bytes_i;
     logic reg_we_out_i;
     logic [4:0] rd_out_i;
+    logic unsigned_flag_i;
 
     /* verilator lint_off UNUSED */
     logic [31:0] emit_insn;
@@ -82,6 +85,7 @@ module decoder
     	    alu_bytes      <= 2'b00;
     	    reg_we_out     <= 1'b0;
     	    rd_out         <= 5'd0;
+	    unsigned_flag  <= 1'b0;
 	end else begin
     	    run_out <= run;
 	    case(state)
@@ -105,6 +109,7 @@ module decoder
     			alu_bytes      <= alu_bytes_i;
     			reg_we_out     <= reg_we_out_i;
     			rd_out         <= rd_out_i;
+			unsigned_flag  <= unsigned_flag_i;
 			
     			if(branch_en_i | jal_en_i | jalr_en_i) begin
 			    state <= state + 1;
@@ -124,6 +129,7 @@ module decoder
     		    branch_en      <= 0;
     		    jal_en         <= 0;
     		    jalr_en        <= 0;
+		    unsigned_flag  <= 0;
 		    if(stall_mem > 0) begin
 			stall_mem <= stall_mem -1;
 		    end else if(stall_ctrl > 0) begin
@@ -155,7 +161,8 @@ module decoder
 		      .imm(imm_value),
 		      .rs1(rs1),
 		      .rs2(rs2),
-		      .rd(rd_out_i)
+		      .rd(rd_out_i),
+		      .unsigned_flag(unsigned_flag_i)
 		      );
 
     registers rf_i(.clk(clk),

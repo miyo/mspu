@@ -6,6 +6,7 @@ module alu
 
    input wire signed [31:0] a,
    input wire signed [31:0] b,
+   input wire unsigned_flag,
 
    output logic zero,
    output logic signed [31:0] result,
@@ -23,6 +24,11 @@ module alu
 	unknown_op = unknown_op_r;
     end
 
+    wire unsigned [31:0] ua;
+    wire unsigned [31:0] ub;
+    assign ua = a;
+    assign ub = b;
+
     always_comb begin
 	unknown_op_r = 0;
 	case (alu_op)
@@ -31,6 +37,9 @@ module alu
 	    ALU_ADD : alu_r = a + b;
 	    ALU_SUB : alu_r = a - b;
 	    ALU_EQ  : alu_r = (a == b) ? 32'b1 : 32'b0;
+	    ALU_NE  : alu_r = (a == b) ? 32'b0 : 32'b1;
+	    ALU_LT  : alu_r = unsigned_flag ? ((ua < ub)  ? 32'b1 : 32'b0) : ((a < b)  ? 32'b1 : 32'b0);
+	    ALU_GE  : alu_r = unsigned_flag ? ((ua >= ub) ? 32'b1 : 32'b0) : ((a >= b) ? 32'b1 : 32'b0);
 	    default: unknown_op_r = 1;
 	endcase // case (op)
     end
