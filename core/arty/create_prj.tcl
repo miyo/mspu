@@ -1,5 +1,5 @@
 set project_dir    "prj"
-set project_name   "dummy_top"
+set project_name   "arty_top"
 set project_target "xc7a35ticsg324-1L"
 set source_files { \
 		../addr_calc.sv \
@@ -14,17 +14,27 @@ set source_files { \
 		../instruction_memory.sv \
 		../registers.sv \
 		../simple_dualportram.sv \
-		dummy_top.sv \
+		arty_top.sv \
+		clk_div.v \
+		uart_rx.v \
+		uart_tx.v \
 	  }
-set constraint_files {./dummy_top.xdc}
+set constraint_files {./arty.xdc}
+
+set sim_files { \
+		./dummy_top_tb.sv \
+		./dummy_top.sv
+		}
 
 create_project -force $project_name $project_dir -part $project_target
 add_files -norecurse $source_files
 add_files -fileset constrs_1 -norecurse $constraint_files
+add_files -fileset sim_1 -norecurse $sim_files
 
 import_ip -files fifo_generator_0.xci
 
 update_compile_order -fileset sources_1
+update_compile_order -fileset sim_1
 
 reset_project
 
