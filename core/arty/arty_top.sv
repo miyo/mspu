@@ -66,22 +66,22 @@ module arty_top
 		run <= 0;
 		if(~uart_rx_rd_d && uart_rx_rd) begin
 		    if(sw1 == 1) begin
-			data_buf <= {data_buf[23:0], uart_rx_dout};
+			data_buf <= {uart_rx_dout, data_buf[31:8]};
 			data_counter <= data_counter + 1;
 			if(data_counter[1:0] == 2'b11) begin
 			    data_we <= 1'b1;
 			    data_addr <= data_counter;
-			    data_din <= {data_buf[23:0], uart_rx_dout};
+			    data_din <= {uart_rx_dout, data_buf[31:8]};
 			end else begin
 			    data_we <= 1'b0;
 			end
 		    end else begin
-			insn_buf <= {insn_buf[23:0], uart_rx_dout};
+			insn_buf <= {uart_rx_dout, insn_buf[31:8]};
 			insn_counter <= insn_counter + 1;
 			if(insn_counter[1:0] == 2'b11) begin
 			    insn_we <= 1'b1;
 			    insn_addr <= insn_counter;
-			    insn_din <= {insn_buf[23:0], uart_rx_dout};
+			    insn_din <= {uart_rx_dout, insn_buf[31:8]};
 			end else begin
 			    insn_we <= 1'b0;
 			end

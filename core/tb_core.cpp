@@ -1,22 +1,15 @@
+#include <cstdlib>
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <verilated.h>
 #include "testbench.h"
 #include "Vcore.h"
 
-int main(int argc, char** argv) {
-
-    Verilated::commandArgs(argc, argv);
-
-    TESTBENCH<Vcore> *tb = new TESTBENCH<Vcore>();
-    
-    tb->opentrace("trace.vcd");
-    tb->m_core->run = 0;
-    
-    std::cout << "init" << std::endl;
-
-    std::vector<unsigned int> insn = {
-        0x40000417, // auipc s0,0x0
+void load_default(std::vector<unsigned int>& insn, std::vector<unsigned int>& data)
+{
+    insn = std::vector<unsigned int>{
+        0xa0000417, // auipc s0,0xa0000
         0x00040413, // mv    s0,s0
         0x00040503, // lb    a0,0(s0)
         0x00140413, // addi  s0,s0,1
@@ -28,13 +21,66 @@ int main(int argc, char** argv) {
         0x00008067, // ret
         0x0000006f  // j halt
     };
-    std::vector<unsigned int> data = {
+    data = std::vector<unsigned int>{
         0x6c6c6548,
         0x52202c6f,
         0x2d435349,
         0x00000a56
     };
-                           
+}
+
+int load_insn_and_data(std::vector<unsigned int>& insn, std::vector<unsigned int>& data, char* isrc, char* dsrc)
+{
+    unsigned int d;
+    {
+        std::ifstream ifs(isrc, std::ios::in | std::ios::binary);
+        if(ifs.is_open() == false) return -1;
+        while(!ifs.eof()){
+            ifs.read((char*)&d, sizeof(unsigned int));
+            insn.push_back(d);
+        }
+        ifs.close();
+    }
+    {
+        std::ifstream ifs(dsrc, std::ios::in | std::ios::binary);
+        if(ifs.is_open() == false) return -1;
+        while(!ifs.eof()){
+            ifs.read((char*)&d, sizeof(unsigned int));
+            data.push_back(d);
+        }
+        ifs.close();
+    }
+    return 0;
+}
+
+int main(int argc, char** argv)
+{
+
+    std::vector<unsigned int> insn;
+    std::vector<unsigned int> data;
+    
+    Verilated::commandArgs(1, argv);
+    TESTBENCH<Vcore> *tb = new TESTBENCH<Vcore>();
+    
+    if(argc < 3){
+        std::cout << "load deafult insn/data (Hello, RISC-V)" << std::endl;
+        load_default(insn, data);
+    }else{
+        std::cout << "load insn/data from " << argv[1] << " and " << argv[2] << std::endl;
+        int ret = load_insn_and_data(insn, data, argv[1], argv[2]);
+        if(ret < 0){
+            std::cout << "cannot open insn/data file " << argv[1] << " and/or " << argv[2] << std::endl;
+            return 0;
+        }
+        argv[1][0] = '\0';
+        argv[2][0] = '\0';
+        argc = 1;
+    }
+    std::cout << "init" << std::endl;
+
+    tb->opentrace("trace.vcd");
+    tb->m_core->run = 0;
+                               
     for(int i = 0; i < insn.size(); i++){
         tb->m_core->insn_addr = 4*i;
         tb->m_core->insn_din = insn[i];
