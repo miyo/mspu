@@ -7,6 +7,7 @@ module executer (
 		 input logic stall,
 
 		 input logic [3:0] alu_op,
+		 input logic [3:0] mul_op,
 		 input logic [31:0] alu_a,
 		 input logic [31:0] alu_b,
 
@@ -42,8 +43,12 @@ module executer (
 		 );
 
     wire [31:0] alu_r;
+    wire alu_unknown_op_i;
     wire [31:0] addr_out_i;
     wire addr_out_en_i;
+
+    wire [31:0] mul_r;
+    wire mul_unknown_op_i;
 
     logic [1:0] state = 0;
     logic [2:0] stall_counter;
@@ -60,7 +65,13 @@ module executer (
     		    re_out <= re_in;
     		    rd_out <= rd_in;
     		    reg_we_out <= reg_we_in;
-    		    alu_result <= alu_r;
+		    if(mul_op != 4'b0000) begin
+			alu_result <= mul_r;
+			alu_unknown_op <= mul_unknown_op_i;
+		    end else begin
+    			alu_result <= alu_r;
+			alu_unknown_op <= alu_unknown_op_i;
+		    end
 		    addr_out <= addr_out_i;
 		    addr_out_en <= addr_out_en_i;
 		    unsigned_flag_out <= unsigned_flag;
@@ -92,9 +103,16 @@ module executer (
 	      .unsigned_flag(unsigned_flag),
 	      .zero(),
 	      .result(alu_r),
-	      .unknown_op(alu_unknown_op)
+	      .unknown_op(alu_unknown_op_i)
 	      );
     /* verilator lint_on PINCONNECTEMPTY */
+
+    mul mul_i(.mul_op(mul_op),
+	      .a(alu_a),
+	      .b(alu_b),
+	      .result(mul_r),
+	      .unknown_op(mul_unknown_op_i)
+	      );
 
     addr_calc addr_calc_i(.pc(pc),
 			  .imm(imm_value),

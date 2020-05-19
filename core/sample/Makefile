@@ -1,15 +1,20 @@
 CC := riscv64-unknown-elf-gcc
 OBJCOPY := riscv64-unknown-elf-objcopy
-FLAGS := -march=rv32i -mabi=ilp32 -nostartfiles
+ARCH := -march=rv32i
+FLAGS := -mabi=ilp32 -nostartfiles
 
 all:
-	$(CC) $(FLAGS) -Tlinker.ld hello.s -o hello
+	$(CC) $(ARCH) $(FLAGS) -Tlinker.ld hello.s -o hello
 	$(OBJCOPY) -O binary --only-section=.text hello hello.insn
 	$(OBJCOPY) -O binary --only-section=.data hello hello.data
 	
-	$(CC) $(FLAGS) -Tlinker.ld simple.s -o simple
+	$(CC) -march=rv32im $(FLAGS) -Tlinker.ld simple.s -o simple
 	$(OBJCOPY) -O binary --only-section=.text simple simple.insn
 	$(OBJCOPY) -O binary --only-section=.data simple simple.data
+	
+	$(CC) -march=rv32im $(FLAGS) -Tfact.ld fact.s -o fact
+	$(OBJCOPY) -O binary --only-section=.text fact fact.insn
+	$(OBJCOPY) -O binary --only-section=.data fact fact.data
 
 clean:
 	-rm -f hello

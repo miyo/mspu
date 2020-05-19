@@ -9,6 +9,7 @@ module control
    output logic mem_we,
    output logic mem_to_reg,
    output logic [3:0] alu_op,
+   output logic [3:0] mul_op,
    output logic alu_src_a,
    output logic alu_src_b,
    output logic [1:0] alu_bytes,
@@ -30,8 +31,6 @@ module control
     localparam IMM_J = 3'd5;
     logic [2:0] imm_t;
 
-    logic [18:0] param;
-
     /* verilator lint_off UNUSED */
     wire [6:0] opcode = insn[ 6: 0];
     wire [2:0] funct3 = insn[14:12];
@@ -41,7 +40,12 @@ module control
     logic [19:0] LOW20  = 20'h0_0000;
     logic [19:0] HIGH20 = 20'hF_FFFF;
     logic [19:0] prefix;
+
+    logic [22:0] param;
+
     always_comb begin
+	mul_op = param[22:19];
+
 	unsigned_flag = param[18];
 	imm_t = param[17:15];
 	prefix = unsigned_flag ? LOW20 : insn[31] == 1'b0 ? LOW20 : HIGH20;
@@ -72,43 +76,43 @@ module control
 
     always_comb begin
 	casez(insn)
-	    LUI  : param = {1'b0, IMM_U, 3'b000, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b00, 1'b1};
-	    AUIPC: param = {1'b0, IMM_U, 3'b000, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b1, 1'b1, 2'b00, 1'b1};
+	    LUI  : param = {4'd0, 1'b0, IMM_U, 3'b000, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b00, 1'b1};
+	    AUIPC: param = {4'd0, 1'b0, IMM_U, 3'b000, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b1, 1'b1, 2'b00, 1'b1};
 
-	    JAL  : param = {1'b0, IMM_J, 3'b010, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b1, 1'b0, 2'b00, 1'b1};
-	    JALR : param = {1'b0, IMM_I, 3'b001, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b00, 1'b1};
+	    JAL  : param = {4'd0, 1'b0, IMM_J, 3'b010, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b1, 1'b0, 2'b00, 1'b1};
+	    JALR : param = {4'd0, 1'b0, IMM_I, 3'b001, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b00, 1'b1};
 
-	    BEQ  : param = {1'b0, IMM_B, 3'b100, 1'b0, 1'b0, 1'b0, ALU_EQ,  1'b0, 1'b0, 2'b00, 1'b0};
-	    BNE  : param = {1'b0, IMM_B, 3'b100, 1'b0, 1'b0, 1'b0, ALU_NE,  1'b0, 1'b0, 2'b00, 1'b0};
-	    BLT  : param = {1'b0, IMM_B, 3'b100, 1'b0, 1'b0, 1'b0, ALU_LT,  1'b0, 1'b0, 2'b00, 1'b0};
-	    BGE  : param = {1'b0, IMM_B, 3'b100, 1'b0, 1'b0, 1'b0, ALU_GE,  1'b0, 1'b0, 2'b00, 1'b0};
-	    BLTU : param = {1'b1, IMM_B, 3'b100, 1'b0, 1'b0, 1'b0, ALU_LT,  1'b0, 1'b0, 2'b00, 1'b0};
-	    BGEU : param = {1'b1, IMM_B, 3'b100, 1'b0, 1'b0, 1'b0, ALU_GE,  1'b0, 1'b0, 2'b00, 1'b0};
+	    BEQ  : param = {4'd0, 1'b0, IMM_B, 3'b100, 1'b0, 1'b0, 1'b0, ALU_EQ,  1'b0, 1'b0, 2'b00, 1'b0};
+	    BNE  : param = {4'd0, 1'b0, IMM_B, 3'b100, 1'b0, 1'b0, 1'b0, ALU_NE,  1'b0, 1'b0, 2'b00, 1'b0};
+	    BLT  : param = {4'd0, 1'b0, IMM_B, 3'b100, 1'b0, 1'b0, 1'b0, ALU_LT,  1'b0, 1'b0, 2'b00, 1'b0};
+	    BGE  : param = {4'd0, 1'b0, IMM_B, 3'b100, 1'b0, 1'b0, 1'b0, ALU_GE,  1'b0, 1'b0, 2'b00, 1'b0};
+	    BLTU : param = {4'd0, 1'b1, IMM_B, 3'b100, 1'b0, 1'b0, 1'b0, ALU_LT,  1'b0, 1'b0, 2'b00, 1'b0};
+	    BGEU : param = {4'd0, 1'b1, IMM_B, 3'b100, 1'b0, 1'b0, 1'b0, ALU_GE,  1'b0, 1'b0, 2'b00, 1'b0};
 
-	    LB   : param = {1'b0, IMM_I, 1'b0, 1'b0, 1'b0, 1'b1, 1'b0, 1'b1, ALU_ADD, 1'b0, 1'b1, 2'b01, 1'b1};
-	    LH   : param = {1'b0, IMM_I, 1'b0, 1'b0, 1'b0, 1'b1, 1'b0, 1'b1, ALU_ADD, 1'b0, 1'b1, 2'b10, 1'b1};
-	    LW   : param = {1'b0, IMM_I, 1'b0, 1'b0, 1'b0, 1'b1, 1'b0, 1'b1, ALU_ADD, 1'b0, 1'b1, 2'b00, 1'b1};
-	    LBU  : param = {1'b1, IMM_I, 1'b0, 1'b0, 1'b0, 1'b1, 1'b0, 1'b1, ALU_ADD, 1'b0, 1'b1, 2'b01, 1'b1};
-	    LHU  : param = {1'b1, IMM_I, 1'b0, 1'b0, 1'b0, 1'b1, 1'b0, 1'b1, ALU_ADD, 1'b0, 1'b1, 2'b10, 1'b1};
+	    LB   : param = {4'd0, 1'b0, IMM_I, 3'b000, 1'b1, 1'b0, 1'b1, ALU_ADD, 1'b0, 1'b1, 2'b01, 1'b1};
+	    LH   : param = {4'd0, 1'b0, IMM_I, 3'b000, 1'b1, 1'b0, 1'b1, ALU_ADD, 1'b0, 1'b1, 2'b10, 1'b1};
+	    LW   : param = {4'd0, 1'b0, IMM_I, 3'b000, 1'b1, 1'b0, 1'b1, ALU_ADD, 1'b0, 1'b1, 2'b00, 1'b1};
+	    LBU  : param = {4'd0, 1'b1, IMM_I, 3'b000, 1'b1, 1'b0, 1'b1, ALU_ADD, 1'b0, 1'b1, 2'b01, 1'b1};
+	    LHU  : param = {4'd0, 1'b1, IMM_I, 3'b000, 1'b1, 1'b0, 1'b1, ALU_ADD, 1'b0, 1'b1, 2'b10, 1'b1};
 
-	    SB   : param = {1'b0, IMM_S, 1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b01, 1'b0};
-	    SH   : param = {1'b0, IMM_S, 1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b10, 1'b0};
-	    SW   : param = {1'b0, IMM_S, 1'b0, 1'b0, 1'b0, 1'b0, 1'b1, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b00, 1'b0};
+	    SB   : param = {4'd0, 1'b0, IMM_S, 3'b000, 1'b0, 1'b1, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b01, 1'b0};
+	    SH   : param = {4'd0, 1'b0, IMM_S, 3'b000, 1'b0, 1'b1, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b10, 1'b0};
+	    SW   : param = {4'd0, 1'b0, IMM_S, 3'b000, 1'b0, 1'b1, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b00, 1'b0};
 
-	    ADDI : param = {1'b0, IMM_I, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b00, 1'b1};
-	    SLTI : param = {1'b0, IMM_I, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_LT,  1'b0, 1'b1, 2'b00, 1'b1};
-	    SLTIU: param = {1'b1, IMM_I, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_LT,  1'b0, 1'b1, 2'b00, 1'b1};
-	    XORI : param = {1'b0, IMM_I, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_XOR, 1'b0, 1'b1, 2'b00, 1'b1};
-	    ORI  : param = {1'b0, IMM_I, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_OR,  1'b0, 1'b1, 2'b00, 1'b1};
-	    ANDI : param = {1'b0, IMM_I, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_AND, 1'b0, 1'b1, 2'b00, 1'b1};
+	    ADDI : param = {4'd0, 1'b0, IMM_I, 3'b000, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b00, 1'b1};
+	    SLTI : param = {4'd0, 1'b0, IMM_I, 3'b000, 1'b0, 1'b0, 1'b0, ALU_LT,  1'b0, 1'b1, 2'b00, 1'b1};
+	    SLTIU: param = {4'd0, 1'b1, IMM_I, 3'b000, 1'b0, 1'b0, 1'b0, ALU_LT,  1'b0, 1'b1, 2'b00, 1'b1};
+	    XORI : param = {4'd0, 1'b0, IMM_I, 3'b000, 1'b0, 1'b0, 1'b0, ALU_XOR, 1'b0, 1'b1, 2'b00, 1'b1};
+	    ORI  : param = {4'd0, 1'b0, IMM_I, 3'b000, 1'b0, 1'b0, 1'b0, ALU_OR,  1'b0, 1'b1, 2'b00, 1'b1};
+	    ANDI : param = {4'd0, 1'b0, IMM_I, 3'b000, 1'b0, 1'b0, 1'b0, ALU_AND, 1'b0, 1'b1, 2'b00, 1'b1};
 
-	    ADD   : param = {1'b0, IMM_R, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b0, 1'b0, 2'b00, 1'b1};
-	    SUB   : param = {1'b0, IMM_R, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_SUB, 1'b0, 1'b0, 2'b00, 1'b1};
-	    SLT   : param = {1'b0, IMM_R, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_LT,  1'b0, 1'b0, 2'b00, 1'b1};
-	    SLTU  : param = {1'b1, IMM_R, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_LT,  1'b0, 1'b0, 2'b00, 1'b1};
-	    XOR   : param = {1'b0, IMM_R, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_XOR, 1'b0, 1'b0, 2'b00, 1'b1};
-	    OR    : param = {1'b0, IMM_R, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_OR,  1'b0, 1'b0, 2'b00, 1'b1};
-	    AND   : param = {1'b0, IMM_R, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_AND, 1'b0, 1'b0, 2'b00, 1'b1};
+	    ADD   : param = {4'd0, 1'b0, IMM_R, 3'b000, 1'b0, 1'b0, 1'b0, ALU_ADD, 1'b0, 1'b0, 2'b00, 1'b1};
+	    SUB   : param = {4'd0, 1'b0, IMM_R, 3'b000, 1'b0, 1'b0, 1'b0, ALU_SUB, 1'b0, 1'b0, 2'b00, 1'b1};
+	    SLT   : param = {4'd0, 1'b0, IMM_R, 3'b000, 1'b0, 1'b0, 1'b0, ALU_LT,  1'b0, 1'b0, 2'b00, 1'b1};
+	    SLTU  : param = {4'd0, 1'b1, IMM_R, 3'b000, 1'b0, 1'b0, 1'b0, ALU_LT,  1'b0, 1'b0, 2'b00, 1'b1};
+	    XOR   : param = {4'd0, 1'b0, IMM_R, 3'b000, 1'b0, 1'b0, 1'b0, ALU_XOR, 1'b0, 1'b0, 2'b00, 1'b1};
+	    OR    : param = {4'd0, 1'b0, IMM_R, 3'b000, 1'b0, 1'b0, 1'b0, ALU_OR,  1'b0, 1'b0, 2'b00, 1'b1};
+	    AND   : param = {4'd0, 1'b0, IMM_R, 3'b000, 1'b0, 1'b0, 1'b0, ALU_AND, 1'b0, 1'b0, 2'b00, 1'b1};
 
 	    //SLLI  = 32'b0000000_?????_?????_001_?????_0010011;
 	    //SRLI  = 32'b0000000_?????_?????_101_?????_0010011;
@@ -116,6 +120,11 @@ module control
 	    //SLL   : param = {1'b0, IMM_R, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_SLL, 1'b0, 1'b0, 2'b00, 1'b1};
 	    //SRL   : param = {1'b0, IMM_R, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_SRL, 1'b0, 1'b0, 2'b00, 1'b1};
 	    //SRA   : param = {1'b0, IMM_R, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, 1'b0, ALU_SRA, 1'b0, 1'b0, 2'b00, 1'b1};
+	    
+	    MUL    : param = {MUL_MUL,    1'b0, IMM_R, 3'b000, 1'b0, 1'b0, 1'b0, ALU_AND, 1'b0, 1'b0, 2'b00, 1'b1};
+	    MULH   : param = {MUL_MULH,   1'b0, IMM_R, 3'b000, 1'b0, 1'b0, 1'b0, ALU_AND, 1'b0, 1'b0, 2'b00, 1'b1};
+	    MULHSU : param = {MUL_MULHSU, 1'b0, IMM_R, 3'b000, 1'b0, 1'b0, 1'b0, ALU_AND, 1'b0, 1'b0, 2'b00, 1'b1};
+	    MULHU  : param = {MUL_MULHU,  1'b0, IMM_R, 3'b000, 1'b0, 1'b0, 1'b0, ALU_AND, 1'b0, 1'b0, 2'b00, 1'b1};
 
 	endcase // case (insn)
     end

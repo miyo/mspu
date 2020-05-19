@@ -33,6 +33,7 @@ module core
     wire [31:0] imm_value;
 
     wire [3:0] alu_op;
+    wire [3:0] mul_op;
     wire reg_we, reg_we_out;
     wire dmem_we, dmem_re;
     wire [31:0] dmem_wdata;
@@ -105,6 +106,7 @@ module core
 		      .mem_we(dmem_we),
 		      .mem_to_reg_out(mem_to_reg),
 		      .alu_op(alu_op),
+		      .mul_op(mul_op),
 		      .alu_a(alu_a_id),
 		      .alu_b(alu_b_id),
 		      .alu_rs1(alu_rs1),
@@ -146,6 +148,7 @@ module core
 		  .stall(ex_stall),
 		  // input
 		  .alu_op(alu_op), // from ID
+		  .mul_op(mul_op), // from ID
 		  .alu_a(alu_a),   // from ID
 		  .alu_b(alu_b),   // from ID
 		  .pc(pc_id),      // from ID

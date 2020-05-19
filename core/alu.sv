@@ -47,5 +47,3 @@ module alu
 endmodule // registers
 
 `default_nettype wire
-
-

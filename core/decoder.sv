@@ -21,6 +21,7 @@ module decoder
    output logic mem_we,
    output logic mem_to_reg_out,
    output logic [3:0] alu_op,
+   output logic [3:0] mul_op,
    output logic [31:0] alu_a,
    output logic [31:0] alu_b,
    output logic [4:0] alu_rs1,
@@ -48,6 +49,7 @@ module decoder
     logic mem_we_i;
     logic mem_to_reg_out_i;
     logic [3:0] alu_op_i;
+    logic [3:0] mul_op_i;
     logic [1:0] alu_bytes_i;
     logic reg_we_out_i;
     logic [4:0] rd_out_i;
@@ -82,6 +84,7 @@ module decoder
     	    mem_we         <= 1'b0;
     	    mem_to_reg_out <= 1'b0;
     	    alu_op         <= 4'b0000;
+    	    mul_op         <= 4'b0000;
     	    alu_bytes      <= 2'b00;
     	    reg_we_out     <= 1'b0;
     	    rd_out         <= 5'd0;
@@ -106,6 +109,7 @@ module decoder
     			mem_we         <= mem_we_i;
     			mem_to_reg_out <= mem_to_reg_out_i;
     			alu_op         <= alu_op_i;
+    			mul_op         <= mul_op_i;
     			alu_bytes      <= alu_bytes_i;
     			reg_we_out     <= reg_we_out_i;
     			rd_out         <= rd_out_i;
@@ -154,6 +158,7 @@ module decoder
 		      .mem_we(mem_we_i),
 		      .mem_to_reg(mem_to_reg_out_i),
 		      .alu_op(alu_op_i),
+		      .mul_op(mul_op_i),
 		      .alu_src_a(alu_src_a),
 		      .alu_src_b(alu_src_b),
 		      .alu_bytes(alu_bytes_i),
