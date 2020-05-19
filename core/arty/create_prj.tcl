@@ -15,6 +15,8 @@ set source_files { \
 		../registers.sv \
 		../simple_dualportram.sv \
 		../data_forwarding.sv \
+		../mul.sv \
+		../div.sv \
 		arty_top.sv \
 		clk_div.v \
 		uart_rx.v \

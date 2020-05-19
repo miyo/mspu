@@ -39,7 +39,7 @@ module decoder
    output logic run_out,
    output logic mem_hazard,
    output logic div_hazard,
-   input logic div_ready
+   input wire div_ready
    );
 
 `include "core.svh"
