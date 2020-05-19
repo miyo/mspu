@@ -72,7 +72,7 @@ module decoder
     logic [1:0] stall_div = 0;
 
     assign mem_hazard = mem_to_reg_out_i && (state == 0);
-    assign div_hazard = div_op_i != DIV_NOP;
+    assign div_hazard = (div_op_i != DIV_NOP) && (state == 0);
 
     always_ff @(posedge clk) begin
 	if(reset) begin
