@@ -4,34 +4,11 @@
 
 _start:
 	la  sp,sp_top
-	li  a0,6
-	jal factorial
+	li  a0,345
 	jal printnum
 	li  a0,10 # '\n'
 	jal putchar
 	j   halt
-
-factorial:
-	addi sp,sp,-16
-	sw   a0,8(sp) # preserve a0
-	sw   ra,0(sp)
-	li   t0,2
-	slt  t0,a0,t0 # t0 := (a0 < 2)
-	beqz t0,fact_else
-
-	li   a0,1 # return value
-	addi sp,sp,16
-	ret
-
-fact_else:
-	addi a0,a0,-1  # updated argument
-	jal  factorial # factorial(n-1)
-	mv   t0,a0     # save a0 at t0
-	lw   ra,0(sp)
-	lw   a0,8(sp)  # restore a0
-	addi sp,sp,16
-	mul  a0,a0,t0
-	ret
 
 printnum:
 	addi sp,sp,-16
