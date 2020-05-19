@@ -126,7 +126,7 @@ module decoder
 			
     			if(branch_en_i | jal_en_i | jalr_en_i) begin
 			    state <= state + 1;
-			    stall_ctrl <= 2;
+			    stall_ctrl <= 3;
     			end if(mem_to_reg_out_i) begin
 			    state <= state + 1;
 			    stall_mem <= 1;

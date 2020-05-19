@@ -8,7 +8,7 @@ all:
 	$(OBJCOPY) -O binary --only-section=.text hello hello.insn
 	$(OBJCOPY) -O binary --only-section=.data hello hello.data
 	
-	$(CC) -march=rv32im $(FLAGS) -Tlinker.ld simple.s -o simple
+	$(CC) -march=rv32im $(FLAGS) -Tfact.ld simple.s -o simple
 	$(OBJCOPY) -O binary --only-section=.text simple simple.insn
 	$(OBJCOPY) -O binary --only-section=.data simple simple.data
 	
