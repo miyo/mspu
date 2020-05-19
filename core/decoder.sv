@@ -108,8 +108,8 @@ module decoder
     			alu_a          <= alu_src_a == 0 ? reg_a : pc;
     			alu_b          <= alu_src_b == 0 ? reg_b : imm_value;
     			mem_dout       <= reg_b;
-			alu_rs1        <= rs1;
-			alu_rs2        <= rs2;
+			alu_rs1        <= alu_src_a == 0 ? rs1 : 0;
+			alu_rs2        <= alu_src_b == 0 ? rs2 : 0;
     			branch_en      <= branch_en_i;
     			jal_en         <= jal_en_i;
     			jalr_en        <= jalr_en_i;

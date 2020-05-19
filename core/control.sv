@@ -60,9 +60,6 @@ module control
 	    default: imm = 32'd0;
 	endcase // case (imm_t)
 	
-	rd  = insn[11: 7];
-	rs1 = (imm_t == IMM_U) ? R0 : insn[19:15];
-	rs2 = (imm_t == IMM_J) ? R0 : insn[24:20];
 	branch_en     = param[14];
 	jal_en        = param[13];
 	jalr_en       = param[12];
@@ -74,6 +71,11 @@ module control
 	alu_src_b     = param[3]; // '0' -> rs2, '1' -> imm
 	alu_bytes     = param[2:1];
 	reg_we        = param[0];
+
+	rd  = insn[11: 7];
+	rs1 = (imm_t == IMM_U) ? R0 : insn[19:15];
+	rs2 = (imm_t == IMM_J) ? R0 : insn[24:20];
+
     end
 
     always_comb begin
