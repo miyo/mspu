@@ -6,6 +6,8 @@ module instruction_fetch#(parameter START_ADDR = 32'h8000_0000)
    input wire run,
    input wire stall,
    input wire stall_mem,
+   input wire stall_div,
+   input wire div_ready,
    input wire [31:0] insn_addr,
    input wire [31:0] insn_din,
    input wire        insn_we,
@@ -27,7 +29,7 @@ module instruction_fetch#(parameter START_ADDR = 32'h8000_0000)
     logic [31:0] npc;
 
     logic [1:0] state = 0;
-    logic stall_mem_d;
+    logic stall_mem_d, stall_div_d;
     logic [1:0] stall_mem_cnt = 0;
 
     always_ff @(posedge clk) begin
@@ -40,7 +42,8 @@ module instruction_fetch#(parameter START_ADDR = 32'h8000_0000)
 	    1: begin
     		run_out <= 1'b1;
 		stall_mem_d <= stall_mem;
-		if(!stall & !stall_mem) begin
+		stall_div_d <= stall_div;
+		if(!stall & !stall_mem & !stall_div) begin
 		    pc_out <= pc;
 		    pc <= npc;
 		    pc_prev <= pc;
@@ -57,6 +60,13 @@ module instruction_fetch#(parameter START_ADDR = 32'h8000_0000)
 			stall_mem_cnt <= stall_mem_cnt - 1;
 		    end else begin
 			stall_mem_d <= 0;
+			state <= 1;
+			pc <= npc;
+			pc_out <= pc;
+		    end
+		end else if(stall_div_d) begin
+		    if(div_ready) begin
+			stall_div_d <= 0;
 			state <= 1;
 			pc <= npc;
 			pc_out <= pc;

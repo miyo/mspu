@@ -98,7 +98,7 @@ int main(int argc, char** argv)
     tb->m_core->data_we = 0;
 
     tb->m_core->run = 1;
-    while(tb->m_tickcount < 1000){
+    while(tb->m_tickcount < 100000){
         if(tb->m_core->uart_we == 1){
             std::cout << (char)(tb->m_core->uart_dout);
         }

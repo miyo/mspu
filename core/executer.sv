@@ -1,13 +1,12 @@
 module executer (
 		 input logic clk,
-		 /* verilator lint_off UNUSED */
 		 input logic reset,
-		 /* verilator lint_on UNUSED */
 		 input logic run,
 		 input logic stall,
 
 		 input logic [3:0] alu_op,
 		 input logic [3:0] mul_op,
+		 input logic [3:0] div_op,
 		 input logic [31:0] alu_a,
 		 input logic [31:0] alu_b,
 
@@ -23,6 +22,7 @@ module executer (
 		 output logic alu_unknown_op,
 		 output logic [31:0] addr_out,
 		 output logic addr_out_en,
+		 output logic div_ready_pre,
 		 
 		 output logic run_out,
 		 input  logic mem_to_reg_in,
@@ -42,6 +42,8 @@ module executer (
 		 output logic unsigned_flag_out
 		 );
 
+`include "core.svh"
+
     wire [31:0] alu_r;
     wire alu_unknown_op_i;
     wire [31:0] addr_out_i;
@@ -49,6 +51,12 @@ module executer (
 
     wire [31:0] mul_r;
     wire mul_unknown_op_i;
+
+    logic div_kick, div_ready;
+    logic [31:0] div_quotient;
+    logic [31:0] div_remainder;
+    logic div_unsigned_flag;
+    logic [31:0] div_a, div_b;
 
     logic [1:0] state = 0;
     logic [2:0] stall_counter;
@@ -65,7 +73,14 @@ module executer (
     		    re_out <= re_in;
     		    rd_out <= rd_in;
     		    reg_we_out <= reg_we_in;
-		    if(mul_op != 4'b0000) begin
+		    if(div_op != DIV_NOP) begin
+    			reg_we_out <= 1'b0;
+			div_kick <= 1;
+			div_a <= alu_a;
+			div_b <= alu_b;
+			div_unsigned_flag <= unsigned_flag;
+			state <= state + 2;
+		    end else if(mul_op != MUL_NOP) begin
 			alu_result <= mul_r;
 			alu_unknown_op <= mul_unknown_op_i;
 		    end else begin
@@ -88,6 +103,23 @@ module executer (
 		    state <= 0;
 		end else begin
 		    stall_counter <= stall_counter - 1;
+		end
+	    end
+	    2: begin
+		div_kick <= 0;
+		if(div_kick == 0 && div_ready == 1) begin
+		    if(div_op == DIV_DIV) begin
+    			reg_we_out <= 1'b1;
+			alu_result <= div_quotient;
+			alu_unknown_op <= 0;
+		    end else if(div_op == DIV_REM) begin
+    			reg_we_out <= 1'b1;
+			alu_result <= div_remainder;
+			alu_unknown_op <= 0;
+		    end else begin
+			alu_unknown_op <= 1;
+		    end
+		    state <= 0;
 		end
 	    end
 	    default: begin
@@ -113,6 +145,19 @@ module executer (
 	      .result(mul_r),
 	      .unknown_op(mul_unknown_op_i)
 	      );
+
+    div div_i(.clk(clk),
+	      .reset(reset),
+	      .kick(div_kick),
+	      .unsigned_flag(div_unsigned_flag),
+	      .dividend(div_a),
+	      .divider(div_b),
+	      .ready(div_ready),
+	      .ready_pre(div_ready_pre),
+	      .quotient(div_quotient),
+	      .remainder(div_remainder)
+	      );
+
 
     addr_calc addr_calc_i(.pc(pc),
 			  .imm(imm_value),

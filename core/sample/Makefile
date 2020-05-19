@@ -12,6 +12,10 @@ all:
 	$(OBJCOPY) -O binary --only-section=.text simple simple.insn
 	$(OBJCOPY) -O binary --only-section=.data simple simple.data
 	
+	$(CC) -march=rv32im $(FLAGS) -Tfact.ld printnum.s -o printnum
+	$(OBJCOPY) -O binary --only-section=.text printnum printnum.insn
+	$(OBJCOPY) -O binary --only-section=.data printnum printnum.data
+	
 	$(CC) -march=rv32im $(FLAGS) -Tfact.ld fact.s -o fact
 	$(OBJCOPY) -O binary --only-section=.text fact fact.insn
 	$(OBJCOPY) -O binary --only-section=.data fact fact.data
