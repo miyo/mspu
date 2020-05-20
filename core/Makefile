@@ -2,7 +2,7 @@ TOP := core
 SOURCES := $(wildcard *.sv) $(wildcard *.svh)
 TESTBENCH := tb_core.cpp testbench.h
 
-.PHONY: all sim clean
+.PHONY: all sim clean test
 
 all: $(SOURCES) $(TESTBENCH)
 	verilator -Wall --cc $(TOP).sv --trace --exe tb_$(TOP).cpp
@@ -18,6 +18,10 @@ shift: shift.sv tb_shift.cpp
 
 sim:
 	./obj_dir/V$(TOP)
+	./obj_dir/V$(TOP) sample/hello.insn sample/hello.data
+	./obj_dir/V$(TOP) sample/fact.insn sample/fact.data
+	./obj_dir/V$(TOP) sample/printnum.insn sample/printnum.data
+	./obj_dir/V$(TOP) sample/simple.insn sample/simple.data
 
 clean:
 	-rm -rf obj_dir

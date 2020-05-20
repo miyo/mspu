@@ -78,9 +78,7 @@ module control
 
 	rd  = insn[11: 7];
 	rs1 = (imm_t == IMM_U) ? R0 : insn[19:15];
-	//rs2 = (imm_t == IMM_R || imm_t == IMM_S) ? insn[24:20] : R0;
-	rs2 = (imm_t == IMM_J) ? R0 : insn[24:20];
-
+	rs2 = (imm_t == IMM_R || imm_t == IMM_S) ? insn[24:20] : R0;
     end
 
     always_comb begin
@@ -101,8 +99,8 @@ module control
 	    LB   : param = {10'd0, 1'b0, IMM_I, 3'b000, 1'b1, 1'b0, 1'b1, ALU_ADD, 1'b0, 1'b1, 2'b01, 1'b1};
 	    LH   : param = {10'd0, 1'b0, IMM_I, 3'b000, 1'b1, 1'b0, 1'b1, ALU_ADD, 1'b0, 1'b1, 2'b10, 1'b1};
 	    LW   : param = {10'd0, 1'b0, IMM_I, 3'b000, 1'b1, 1'b0, 1'b1, ALU_ADD, 1'b0, 1'b1, 2'b00, 1'b1};
-	    LBU  : param = {10'd0, 1'b1, IMM_I, 3'b000, 1'b1, 1'b0, 1'b1, ALU_ADD, 1'b0, 1'b1, 2'b01, 1'b1};
-	    LHU  : param = {10'd0, 1'b1, IMM_I, 3'b000, 1'b1, 1'b0, 1'b1, ALU_ADD, 1'b0, 1'b1, 2'b10, 1'b1};
+	    LBU  : param = {10'd0, 1'b0, IMM_I, 3'b000, 1'b1, 1'b0, 1'b1, ALU_ADD, 1'b0, 1'b1, 2'b01, 1'b1};
+	    LHU  : param = {10'd0, 1'b0, IMM_I, 3'b000, 1'b1, 1'b0, 1'b1, ALU_ADD, 1'b0, 1'b1, 2'b10, 1'b1};
 
 	    SB   : param = {10'd0, 1'b0, IMM_S, 3'b000, 1'b0, 1'b1, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b01, 1'b0};
 	    SH   : param = {10'd0, 1'b0, IMM_S, 3'b000, 1'b0, 1'b1, 1'b0, ALU_ADD, 1'b0, 1'b1, 2'b10, 1'b0};

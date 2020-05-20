@@ -31,6 +31,8 @@ module executer (
 		 output logic mem_to_reg_out,
 		 input  logic [1:0] bytes_in,
 		 output logic [1:0] bytes_out,
+		 input  logic [4:0] wdata_src_in,
+		 output logic [4:0] wdata_src_out,
 		 input  logic [31:0] wdata_in,
 		 output logic [31:0] wdata_out,
 		 input  logic we_in,
@@ -80,6 +82,7 @@ module executer (
 		if(run && !stall) begin
     		    mem_to_reg_out <= mem_to_reg_in;
     		    bytes_out <= bytes_in;
+    		    wdata_src_out <= wdata_src_in;
     		    wdata_out <= wdata_in;
     		    we_out <= we_in;
     		    re_out <= re_in;

@@ -34,6 +34,7 @@ module decoder
    output logic [4:0] rd_out,
    output logic unsigned_flag,
 
+   output logic [4:0] mem_dout_src,
    output logic [31:0] mem_dout,
    output logic [31:0] pc_out,
 
@@ -68,6 +69,8 @@ module decoder
     /* verilator lint_off UNUSED */
     (* mark_debug *) logic [31:0] emit_insn;
     (* mark_debug *) logic [31:0] emit_pc_out;
+    (* mark_debug *) logic [4:0]  emit_rs1;
+    (* mark_debug *) logic [4:0]  emit_rs2;
     /* verilator lint_on UNUSED */
 
     logic [1:0] state = 0;
@@ -85,10 +88,13 @@ module decoder
 	if(reset) begin
 	    emit_insn      <= 32'h0;
     	    emit_pc_out    <= 32'h0;
+    	    emit_rs1       <= 5'd0;
+    	    emit_rs2       <= 5'd0;
     	    imm            <= 32'h0;
     	    pc_out         <= 32'h0;
     	    alu_a          <= 32'd0;
     	    alu_b          <= 32'd0;
+    	    mem_dout_src   <= 5'd0;
     	    mem_dout       <= 32'h0;
 	    alu_rs1        <= 5'd0;
 	    alu_rs2        <= 5'd0;
@@ -115,9 +121,16 @@ module decoder
     			imm            <= imm_value;
     			pc_out         <= pc;
     			emit_pc_out    <= pc;
+    			emit_rs1       <= rs1;
+    			emit_rs2       <= rs2;
     			alu_a          <= alu_src_a == 0 ? reg_a : pc;
     			alu_b          <= alu_src_b == 0 ? reg_b : imm_value;
-    			mem_dout       <= reg_b;
+			if(rd_in == rs2) begin
+			    mem_dout   <= reg_wdata;
+			end else begin
+    			    mem_dout   <= reg_b;
+			end
+			mem_dout_src   <= rs2;
 			alu_rs1        <= alu_src_a == 0 ? rs1 : 0;
 			alu_rs2        <= alu_src_b == 0 ? rs2 : 0;
     			branch_en      <= branch_en_i;

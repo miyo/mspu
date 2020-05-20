@@ -38,6 +38,7 @@ module core
     wire [1:0] shift_op;
     wire reg_we, reg_we_out;
     wire dmem_we, dmem_re;
+    wire [4:0] dmem_wdata_src;
     wire [31:0] dmem_wdata;
     wire mem_to_reg;
     wire branch_en, jal_en, jalr_en;
@@ -50,6 +51,7 @@ module core
 
     wire mem_to_reg_ex;
     wire [1:0] alu_bytes_ex;
+    wire [4:0] dmem_wdata_src_ex;
     wire [31:0] dmem_wdata_ex;
     wire dmem_we_ex;
     wire dmem_re_ex;
@@ -97,6 +99,33 @@ module core
 			   .run_out(run_if)
 			   );
 
+
+    logic [3:0] dmem_we_d;
+    logic [1:0] dmem_re_d;
+    logic [31:0] dmem_waddr_d;
+    logic [31:0] dmem_wdata_d;
+    logic [31:0] alu_a_d;
+    always_ff @(posedge clk) begin
+	dmem_we_d <= {dmem_we_d[2:0], dmem_we};
+	dmem_re_d <= {dmem_re_d[0:0], dmem_re};
+	if(dmem_we) begin
+	    dmem_waddr_d <= alu_a;
+	    dmem_wdata_d <= alu_result;
+	end
+	alu_a_d <= alu_a;
+    end
+    logic [31:0] reg_wdata_i;
+    always_comb begin
+	if(dmem_we_d[2] == 1 && dmem_re_d[1] == 1 && alu_a_d == dmem_waddr_d) begin
+	    reg_wdata_i = dmem_wdata_d;
+	end else if(dmem_we_d[3] == 1 && dmem_re_d[1] == 1 && alu_a_d == dmem_waddr_d) begin
+	    reg_wdata_i = dmem_wdata_d;
+	end else begin
+	    reg_wdata_i = reg_wdata;
+	end
+	//reg_wdata_i = reg_wdata;
+    end
+
     // ID/WB
     decoder decoder_i(.clk(clk),
 		      .reset(reset),
@@ -107,7 +136,7 @@ module core
 		      .pc(pc),     // from ID
 		      .reg_we_in(reg_we_out), // from MEM
 		      .rd_in(reg_rd),         // from MEM
-		      .reg_wdata(reg_wdata),  // from MEM
+		      .reg_wdata(reg_wdata_i),  // from MEM
 		      // output
 		      .branch_en(branch_en),
 		      .jal_en(jal_en),
@@ -128,6 +157,7 @@ module core
 		      .imm(imm_value),
 		      .rd_out(rd),
 		      .unsigned_flag(unsigned_flag),
+		      .mem_dout_src(dmem_wdata_src),
 		      .mem_dout(dmem_wdata),
 		      // through
 		      .pc_out(pc_id),
@@ -140,7 +170,8 @@ module core
 		      .shift_ready(shift_ready)
 		      );
 
-    data_forwarding data_forwarding_i (.rs1_id(alu_rs1), // from ID
+    data_forwarding data_forwarding_i (.clk(clk),
+				       .rs1_id(alu_rs1), // from ID
 				       .rs2_id(alu_rs2), // from ID
 				       .rd_ex(rd_ex),         // from EX
 				       .reg_we_ex(reg_we_ex), // from EX
@@ -151,7 +182,7 @@ module core
 				       .alu_b_id(alu_b_id), // from ID
 
 				       .alu_result(alu_result), // from EX
-				       .reg_wdata(reg_wdata), // from MA
+				       .reg_wdata(reg_wdata_i), // from MA
 
 				       .alu_a(alu_a), // to EX
 				       .alu_b(alu_b)  // to EX
@@ -190,6 +221,8 @@ module core
 		  .mem_to_reg_out(mem_to_reg_ex),
 		  .bytes_in(alu_bytes),
 		  .bytes_out(alu_bytes_ex),
+		  .wdata_src_in(dmem_wdata_src),
+		  .wdata_src_out(dmem_wdata_src_ex),
 		  .wdata_in(dmem_wdata),
 		  .wdata_out(dmem_wdata_ex),
 		  .we_in(dmem_we),
@@ -203,8 +236,18 @@ module core
 		  .unsigned_flag_out(unsigned_flag_ex)
 		  );
 
+    logic [31:0] dmem_wdata_ex_i;
+
+    always_comb begin
+	if(dmem_wdata_src_ex == reg_rd) begin
+	    dmem_wdata_ex_i = reg_wdata;
+	end else begin
+	    dmem_wdata_ex_i = dmem_wdata_ex;
+	end
+    end
+
     // MEM
-    data_memory#(.DEPTH(12))
+    data_memory#(.DEPTH(14))
     dmem_i(.clk(clk),
 	   .reset(reset),
 	   .run(run_ex),
@@ -215,7 +258,7 @@ module core
 	   // input
 	   .addr(alu_result),     // from EX
 	   .bytes(alu_bytes_ex),  // from EX
-	   .wdata(dmem_wdata_ex), // from EX
+	   .wdata(dmem_wdata_ex_i), // from EX
 	   .we(dmem_we_ex),  // from EX
 	   .re(dmem_re_ex),  // from EX
 	   .mem_to_reg_in(mem_to_reg_ex), // from EX
