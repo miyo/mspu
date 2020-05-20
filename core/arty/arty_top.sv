@@ -16,7 +16,7 @@ module arty_top
     (* mark_debug *) logic uart_we;
 
     logic [31:0] run_counter = 32'd100;
-    logic run = 0;
+    (* mark_debug *) logic run = 0;
 
     (* mark_debug *) logic [31:0] insn_addr;
     (* mark_debug *) logic [31:0] insn_din;
@@ -33,9 +33,9 @@ module arty_top
     logic serial_send_kick = 1'b0;
     logic uart_ready;
 
-    logic uart_rx_rd;
-    logic uart_rx_rd_d;
-    logic [7:0] uart_rx_dout;
+    (* mark_debug *) logic uart_rx_rd;
+    (* mark_debug *) logic uart_rx_rd_d;
+    (* mark_debug *) logic [7:0] uart_rx_dout;
 
     logic [31:0] insn_counter = 32'd0;
     logic [31:0] data_counter = 32'd0;
@@ -43,13 +43,17 @@ module arty_top
     logic [31:0] data_buf;
     logic [31:0] insn_buf;
 
+    (* mark_debug *) logic run_d;
+
     always_ff @(posedge clk) begin
 	if(reset == 1) begin
 	    run <= 0;
+	    run_d <= 0;
 	    insn_we <= 0;
 	    data_we <= 0;
 	    uart_rx_rd_d <= 0;
 	end else begin
+	    run_d <= run;
 	    uart_rx_rd_d <= uart_rx_rd;
 
 	    if(sw0 == 0) begin

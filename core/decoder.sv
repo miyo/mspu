@@ -62,7 +62,8 @@ module decoder
     logic unsigned_flag_i;
 
     /* verilator lint_off UNUSED */
-    logic [31:0] emit_insn;
+    (* mark_debug *) logic [31:0] emit_insn;
+    (* mark_debug *) logic [31:0] emit_pc_out;
     /* verilator lint_on UNUSED */
 
     logic [1:0] state = 0;
@@ -77,6 +78,7 @@ module decoder
     always_ff @(posedge clk) begin
 	if(reset) begin
 	    emit_insn      <= 32'h0;
+    	    emit_pc_out    <= 32'h0;
     	    imm            <= 32'h0;
     	    pc_out         <= 32'h0;
     	    alu_a          <= 32'd0;
@@ -105,6 +107,7 @@ module decoder
 			emit_insn      <= insn;
     			imm            <= imm_value;
     			pc_out         <= pc;
+    			emit_pc_out    <= pc;
     			alu_a          <= alu_src_a == 0 ? reg_a : pc;
     			alu_b          <= alu_src_b == 0 ? reg_b : imm_value;
     			mem_dout       <= reg_b;
