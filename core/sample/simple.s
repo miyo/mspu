@@ -6,6 +6,14 @@ _start:
 	la s0,message
 
 loop:
+	li   s1,100
+	li   s2,3
+	slli s1,s1,2
+	srl  s1,s1,s2
+	addi s1,s1,1
+	addi s2,s2,1
+	sll  s1,s1,s2
+	slli s1,s2,0
 	li   s1,30
 	li   s2,7
 	div  s1,s1,s2

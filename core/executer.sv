@@ -68,6 +68,10 @@ module executer (
 
     logic [2:0] state = 0;
     logic [2:0] stall_counter;
+    logic shift_ready_pre_i;
+    logic shift_nop = 0;
+
+    assign shift_ready_pre = shift_ready_pre_i || shift_nop;
 
     always_ff @(posedge clk) begin
     	run_out <= run;
@@ -83,16 +87,17 @@ module executer (
     		    reg_we_out <= reg_we_in;
 		    if(shift_op != SH_NOP) begin
 			if(alu_b == 0) begin
-			    alu_result <= alu_a; // 0-shift
+			    shift_nop <= 1;
 			end else begin
-    			    reg_we_out <= 1'b0;
 			    shift_kick <= 1;
-			    shift_a <= alu_a;
-			    shift_b <= alu_b;
 			    shift_unsigned_flag <= unsigned_flag;
 			    shift_lshift_flag <= (shift_op == SH_SLL) ? 1'b1 : 1'b0;
-			    state <= state + 3;
+			    shift_nop <= 0;
 			end
+			state <= state + 3;
+    			reg_we_out <= 1'b0;
+			shift_a <= alu_a;
+			shift_b <= alu_b;
 		    end else if(div_op != DIV_NOP) begin
     			reg_we_out <= 1'b0;
 			div_kick <= 1;
@@ -127,6 +132,7 @@ module executer (
 	    end
 	    2: begin
 		div_kick <= 0;
+		shift_nop <= 0;
 		if(div_kick == 0 && div_ready == 1) begin
 		    if(div_op == DIV_DIV) begin
     			reg_we_out <= 1'b1;
@@ -146,7 +152,11 @@ module executer (
 		shift_kick <= 0;
 		if(shift_kick == 0 && shift_ready == 1) begin
     		    reg_we_out <= 1'b1;
-		    alu_result <= shift_q;
+		    if(shift_nop) begin
+			alu_result <= shift_a;
+		    end else begin
+			alu_result <= shift_q;
+		    end
 		    alu_unknown_op <= 0;
 		    state <= 0;
 		end
@@ -195,7 +205,7 @@ module executer (
 		  .a(shift_a),
 		  .b(shift_b),
 		  .ready(shift_ready),
-		  .done(shift_ready_pre),
+		  .ready_pre(shift_ready_pre_i),
 		  .q(shift_q)
 		  );
 

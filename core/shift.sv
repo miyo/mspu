@@ -8,30 +8,28 @@ module shift
    input wire [31:0] a,
    input wire [31:0] b,
    output logic ready,
-   output logic done,
+   output logic ready_pre,
    output logic [31:0] q
    );
 
     logic [31:0] b_r;
     logic lshift_r;
 
-    assign ready = (b_r == 0);
+    always_comb begin
+	ready = (b_r == 0);
+	ready_pre = (b_r == 1);
+    end
 
     always_ff @(posedge clk) begin
 	if(reset == 1) begin
 	    b_r <= 0;
-	    done <= 0;
 	end else begin
 	    if(b_r == 0 && kick) begin
 		q <= a;
 		b_r <= b;
 		lshift_r <= lshift;
-		done <= 0;
 	    end else if(b_r > 0) begin
 		b_r <= b_r - 1;
-		if(b_r == 1) begin
-		    done <= 1;
-		end
 		if(lshift_r) begin
 		    q <= {q[30:0], 1'b0};
 		end else begin
