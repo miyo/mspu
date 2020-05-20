@@ -17,6 +17,7 @@ set source_files { \
 		../data_forwarding.sv \
 		../mul.sv \
 		../div.sv \
+		../shift.sv \
 		arty_top.sv \
 		clk_div.v \
 		uart_rx.v \
