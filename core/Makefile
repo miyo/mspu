@@ -12,6 +12,10 @@ div: div.sv tb_div.cpp
 	verilator -Wall --cc div.sv --trace --exe tb_div.cpp
 	make -C obj_dir -f Vdiv.mk 
 
+shift: shift.sv tb_shift.cpp
+	verilator -Wall --cc shift.sv --trace --exe tb_shift.cpp
+	make -C obj_dir -f Vshift.mk 
+
 sim:
 	./obj_dir/V$(TOP)
 

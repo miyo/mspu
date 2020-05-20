@@ -35,6 +35,7 @@ module core
     wire [3:0] alu_op;
     wire [3:0] mul_op;
     wire [3:0] div_op;
+    wire [1:0] shift_op;
     wire reg_we, reg_we_out;
     wire dmem_we, dmem_re;
     wire [31:0] dmem_wdata;
@@ -71,6 +72,8 @@ module core
     wire mem_hazard;
     wire div_hazard;
     wire div_ready;
+    wire shift_hazard;
+    wire shift_ready;
 
     // IF
     instruction_fetch if_i(.clk(clk),
@@ -80,6 +83,8 @@ module core
 			   .stall_mem(mem_hazard),
 			   .stall_div(div_hazard),
 			   .div_ready(div_ready),
+			   .stall_shift(shift_hazard),
+			   .shift_ready(shift_ready),
 			   .insn_addr(insn_addr),
 			   .insn_din(insn_din),
 			   .insn_we(insn_we),
@@ -113,6 +118,7 @@ module core
 		      .alu_op(alu_op),
 		      .mul_op(mul_op),
 		      .div_op(div_op),
+		      .shift_op(shift_op),
 		      .alu_a(alu_a_id),
 		      .alu_b(alu_b_id),
 		      .alu_rs1(alu_rs1),
@@ -129,7 +135,9 @@ module core
 
 		      .mem_hazard(mem_hazard),
 		      .div_hazard(div_hazard),
-		      .div_ready(div_ready)
+		      .div_ready(div_ready),
+		      .shift_hazard(shift_hazard),
+		      .shift_ready(shift_ready)
 		      );
 
     data_forwarding data_forwarding_i (.rs1_id(alu_rs1), // from ID
@@ -158,6 +166,7 @@ module core
 		  .alu_op(alu_op), // from ID
 		  .mul_op(mul_op), // from ID
 		  .div_op(div_op), // from ID
+		  .shift_op(shift_op), // from ID
 		  .alu_a(alu_a),   // from ID
 		  .alu_b(alu_b),   // from ID
 		  .pc(pc_id),      // from ID
@@ -174,6 +183,7 @@ module core
 		  .addr_out(pc_in),
 		  .addr_out_en(pc_in_en),
 		  .div_ready_pre(div_ready),
+		  .shift_ready_pre(shift_ready),
 		  // through
 		  .run_out(run_ex),
 		  .mem_to_reg_in(mem_to_reg),

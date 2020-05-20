@@ -23,6 +23,7 @@ module decoder
    output logic [3:0] alu_op,
    output logic [3:0] mul_op,
    output logic [3:0] div_op,
+   output logic [1:0] shift_op,
    output logic [31:0] alu_a,
    output logic [31:0] alu_b,
    output logic [4:0] alu_rs1,
@@ -39,7 +40,9 @@ module decoder
    output logic run_out,
    output logic mem_hazard,
    output logic div_hazard,
-   input wire div_ready
+   input  wire  div_ready,
+   output logic shift_hazard,
+   input  wire  shift_ready
    );
 
 `include "core.svh"
@@ -56,6 +59,7 @@ module decoder
     logic [3:0] alu_op_i;
     logic [3:0] mul_op_i;
     logic [3:0] div_op_i;
+    logic [1:0] shift_op_i;
     logic [1:0] alu_bytes_i;
     logic reg_we_out_i;
     logic [4:0] rd_out_i;
@@ -68,12 +72,14 @@ module decoder
 
     logic [1:0] state = 0;
 
-    logic [1:0] stall_mem = 0;
-    logic [1:0] stall_ctrl = 0;
-    logic [1:0] stall_div = 0;
+    logic [1:0] stall_mem   = 0;
+    logic [1:0] stall_ctrl  = 0;
+    logic [1:0] stall_div   = 0;
+    logic [1:0] stall_shift = 0;
 
     assign mem_hazard = mem_to_reg_out_i && (state == 0);
     assign div_hazard = (div_op_i != DIV_NOP) && (state == 0);
+    assign shift_hazard = (shift_op_i != SH_NOP) && (state == 0);
 
     always_ff @(posedge clk) begin
 	if(reset) begin
@@ -95,6 +101,7 @@ module decoder
     	    alu_op         <= 4'b0000;
     	    mul_op         <= 4'b0000;
     	    div_op         <= 4'b0000;
+    	    shift_op       <= 2'b00;
     	    alu_bytes      <= 2'b00;
     	    reg_we_out     <= 1'b0;
     	    rd_out         <= 5'd0;
@@ -122,6 +129,7 @@ module decoder
     			alu_op         <= alu_op_i;
     			mul_op         <= mul_op_i;
     			div_op         <= div_op_i;
+    			shift_op       <= shift_op_i;
     			alu_bytes      <= alu_bytes_i;
     			reg_we_out     <= reg_we_out_i;
     			rd_out         <= rd_out_i;
@@ -136,6 +144,9 @@ module decoder
     			end if(div_op_i != 0) begin
 			    state <= state + 1;
 			    stall_div <= 1;
+    			end if(shift_op_i != 0) begin
+			    state <= state + 1;
+			    stall_shift <= 1;
 			end
 			
 		    end else begin
@@ -156,6 +167,16 @@ module decoder
 		    end else if(stall_div > 0) begin
 			if(div_ready) begin
 			    stall_div <= 0;
+			    state <= 0;
+			end
+		    end else if(stall_shift > 0) begin
+			if(shift_ready) begin
+			    stall_shift <= 0;
+			    state <= 0;
+			end
+		    end else if(stall_shift > 0) begin
+			if(shift_ready) begin
+			    stall_shift <= 0;
 			    state <= 0;
 			end
 		    end else begin
@@ -180,6 +201,7 @@ module decoder
 		      .alu_op(alu_op_i),
 		      .mul_op(mul_op_i),
 		      .div_op(div_op_i),
+		      .shift_op(shift_op_i),
 		      .alu_src_a(alu_src_a),
 		      .alu_src_b(alu_src_b),
 		      .alu_bytes(alu_bytes_i),

@@ -7,6 +7,7 @@ module executer (
 		 input logic [3:0] alu_op,
 		 input logic [3:0] mul_op,
 		 input logic [3:0] div_op,
+		 input logic [1:0] shift_op,
 		 input logic [31:0] alu_a,
 		 input logic [31:0] alu_b,
 
@@ -23,6 +24,7 @@ module executer (
 		 output logic [31:0] addr_out,
 		 output logic addr_out_en,
 		 output logic div_ready_pre,
+		 output logic shift_ready_pre,
 		 
 		 output logic run_out,
 		 input  logic mem_to_reg_in,
@@ -58,7 +60,13 @@ module executer (
     logic div_unsigned_flag;
     logic [31:0] div_a, div_b;
 
-    logic [1:0] state = 0;
+    logic shift_kick, shift_ready;
+    logic [31:0] shift_q;
+    logic [31:0] shift_a, shift_b;
+    logic shift_unsigned_flag;
+    logic shift_lshift_flag;
+
+    logic [2:0] state = 0;
     logic [2:0] stall_counter;
 
     always_ff @(posedge clk) begin
@@ -73,7 +81,19 @@ module executer (
     		    re_out <= re_in;
     		    rd_out <= rd_in;
     		    reg_we_out <= reg_we_in;
-		    if(div_op != DIV_NOP) begin
+		    if(shift_op != SH_NOP) begin
+			if(alu_b == 0) begin
+			    alu_result <= alu_a; // 0-shift
+			end else begin
+    			    reg_we_out <= 1'b0;
+			    shift_kick <= 1;
+			    shift_a <= alu_a;
+			    shift_b <= alu_b;
+			    shift_unsigned_flag <= unsigned_flag;
+			    shift_lshift_flag <= (shift_op == SH_SLL) ? 1'b1 : 1'b0;
+			    state <= state + 3;
+			end
+		    end else if(div_op != DIV_NOP) begin
     			reg_we_out <= 1'b0;
 			div_kick <= 1;
 			div_a <= alu_a;
@@ -122,6 +142,15 @@ module executer (
 		    state <= 0;
 		end
 	    end
+	    3: begin
+		shift_kick <= 0;
+		if(shift_kick == 0 && shift_ready == 1) begin
+    		    reg_we_out <= 1'b1;
+		    alu_result <= shift_q;
+		    alu_unknown_op <= 0;
+		    state <= 0;
+		end
+	    end
 	    default: begin
 		state <= 0;
 	    end
@@ -158,6 +187,17 @@ module executer (
 	      .remainder(div_remainder)
 	      );
 
+    shift shift_i(.clk(clk),
+		  .reset(reset),
+		  .kick(shift_kick),
+		  .unsigned_flag(shift_unsigned_flag),
+		  .lshift(shift_lshift_flag),
+		  .a(shift_a),
+		  .b(shift_b),
+		  .ready(shift_ready),
+		  .done(shift_ready_pre),
+		  .q(shift_q)
+		  );
 
     addr_calc addr_calc_i(.pc(pc),
 			  .imm(imm_value),

@@ -23,15 +23,15 @@ module uart_rx
    // 内部変数宣言
    reg [7:0] tmp_buf;   // 受信データ系列の一時保存用レジスタ
    reg 	     receiving; // 受信しているかどうか
-   reg [7:0] cbit;      // カウンタ,データを取り込むタイミングを決定するのに使用
+   reg [8:0] cbit;      // カウンタ,データを取り込むタイミングを決定するのに使用
    wire	     rx_en;     // 受信用クロック
    reg 	     rx_en_d;   // 受信用クロック立ち上がり判定用レジスタ
    
    wire [31:0] rx_div;   // クロック分周の倍率
 
    // クロック分周モジュールのインスタンス生成
-   // 受信側は送信側の16倍の速度で値を取り込み処理を行う
-   assign rx_div = ((sys_clk / rate) / 16) - 1;
+   // 受信側は送信側の32倍の速度で値を取り込み処理を行う
+   assign rx_div = ((sys_clk / rate) / 32) - 1;
    clk_div clk_div_i(.clk(clk), .rst(reset), .div(rx_div), .clk_out(rx_en));
 
    always @(posedge clk) begin // 動作を開始するトリガを指定．この場合クロックの立ち上がり．
@@ -52,7 +52,7 @@ module uart_rx
                end
             end else begin // 受信中の場合
               case(cbit) // カウンタに合わせてデータをラッチ
-		6: begin // スタートビットのチェック
+		16: begin // スタートビットのチェック
                    if(din == 1) begin // スタートビットが中途半端．入力をキャンセル
                       receiving <= 0;
                       cbit      <= 0;
@@ -61,12 +61,12 @@ module uart_rx
                    end
 		end
 		
-		22, 38, 54, 70, 86, 102, 118, 134: begin // data
+		48, 80, 112, 144, 176, 208, 240, 272: begin // data
                    cbit <= cbit + 1;
                    tmp_buf <= {din, tmp_buf[7:1]}; // シリアル入力と既に受信したデータを連結
 		end
 		
-		150: begin // stop
+		304: begin // stop
                    rd <= 1;
                    dout <= tmp_buf;
                    receiving <= 0; // 受信完了
