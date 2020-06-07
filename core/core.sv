@@ -15,7 +15,13 @@ module core
    input wire        data_we,
 
    output wire [31:0] uart_dout,
-   output wire        uart_we
+   output wire        uart_we,
+
+   input logic [31:0] fifo_count,
+   input logic [31:0] fifo_din,
+   output logic fifo_re,
+   output logic [31:0] fifo_dout,
+   output logic fifo_we
    );
 
     wire run_if, run_id, run_ex;
@@ -272,7 +278,12 @@ module core
 	   .reg_rd(reg_rd),
 	   // peripheral
 	   .uart_dout(uart_dout),
-	   .uart_we(uart_we)
+	   .uart_we(uart_we),
+	   .fifo_count(fifo_count),
+	   .fifo_din(fifo_din),
+	   .fifo_re(fifo_re),
+	   .fifo_dout(fifo_dout),
+	   .fifo_we(fifo_we)
 	   );
 
 endmodule // core

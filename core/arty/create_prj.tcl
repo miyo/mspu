@@ -1,3 +1,5 @@
+set_param general.maxThreads 1
+
 set project_dir    "prj"
 set project_name   "arty_top"
 set project_target "xc7a35ticsg324-1L"
