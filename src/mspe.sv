@@ -22,11 +22,17 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
    output logic [31:0] uart_dout,
    output logic       uart_we,
 
-   input logic [31:0] fifo_count,
-   input logic [31:0] fifo_din,
-   output logic fifo_re,
-   output logic [31:0] fifo_dout,
-   output logic fifo_we
+   input logic [511:0] snk_data,
+   input logic snk_valid,
+   input logic snk_sop,
+   input logic snk_eop,
+   output logic snk_ready,
+
+   output logic [511:0] src_data,
+   output logic src_valid,
+   output logic src_sop,
+   output logic src_eop,
+   input logic src_ready
    );
 
    logic [31:0] core_run;
@@ -69,12 +75,19 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
    logic [31:0]      core_uart_dout[CORES-1:0];
    logic [CORES-1:0] core_uart_we;
 
-   logic [31:0]      core_fifo_count[CORES-1:0];
+   logic [9:0]       core_fifo_count[CORES-1:0];
    logic [31:0]      core_fifo_din[CORES-1:0];
    logic [CORES-1:0] core_fifo_re;
 
    logic [31:0]      core_fifo_dout[CORES-1:0];
    logic [CORES-1:0] core_fifo_we;
+
+   logic [511:0]     snk_fifo_data [CORES-1:0];
+   logic [CORES-1:0] snk_fifo_we;
+
+   logic [CORES-1:0] src_fifo_rd[i];
+   logic [511:0]     src_fifo_data[CORES-1:0];
+   logic [5:0] 	     src_fifo_count[CORES-1:0];
 
    integer j, k, l;
    always_comb begin
@@ -129,14 +142,84 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 	      .uart_dout(core_uart_dout[i]),
 	      .uart_we(core_uart_we[i]),
 
-	      .fifo_count(core_fifo_count[i]),
+	      .fifo_count({22'd0, core_fifo_count[i]}),
 	      .fifo_din(core_fifo_din[i]),
 	      .fifo_re(core_fifo_re[i]),
 	      .fifo_dout(core_fifo_dout[i]),
 	      .fifo_we(core_fifo_we[i])
 	      );
-      end
+
+	 // to core
+         fifo_ft_512_64_to_32_1024 (
+				    .data    (snk_fifo_data[i]), //   input,   width = 512,  fifo_input.datain
+				    .wrreq   (snk_fifo_we[i]),   //   input,    width = 1,            .wrreq
+				    .rdreq   (core_fifo_re[i]),    //   input,    width = 1,            .rdreq
+				    .wrclk   (clk),   //   input,    width = 1,            .wrclk
+				    .rdclk   (clk),   //   input,    width = 1,            .rdclk
+				    .q       (core_fifo_din[i]),     //  output,  width = 32, fifo_output.dataout
+				    .rdusedw (core_fifo_count[i]), //  output,    width = 10,            .rdusedw
+				    .wrusedw (),  //  output,   width = 6,            .wrusedw
+				    .rdempty (),  //  output,    width = 1,            .rdempty
+				    .wrfull  ()   //  output,    width = 1,            .wrfull
+				    );
+
+	 // from core
+         fifo_ft_32_1024_to_512_64 (
+				    .data    (core_fifo_dout[i]), //   input,   width = 32,  fifo_input.datain
+				    .wrreq   (core_fifo_we[i]),   //   input,    width = 1,            .wrreq
+				    .rdreq   (src_fifo_rd[i]),    //   input,    width = 1,            .rdreq
+				    .wrclk   (clk),   //   input,    width = 1,            .wrclk
+				    .rdclk   (clk),   //   input,    width = 1,            .rdclk
+				    .q       (src_fifo_data[i]),     //  output,  width = 512, fifo_output.dataout
+				    .rdusedw (src_fifo_count[i]), //  output,    width = 6,            .rdusedw
+				    .wrusedw (),  //  output,   width = 10,            .wrusedw
+				    .rdempty (),  //  output,    width = 1,            .rdempty
+				    .wrfull  ()   //  output,    width = 1,            .wrfull
+				    );
+
+	 assign snk_fifo_data[i] = snk_data;
+	 assign snk_fifo_we[i] = snk_valid;
+	 
+      end // block: mspe_cores
    endgenerate
 
+   assign snk_ready = 1'b1;
+
+   logic [31:0] output_core;
+   logic [7:0] 	state_counter = 8'd0;
+   logic [7:0] 	prev_state_counter = 8'd0;
+   always_ff @(posedge clk) begin
+      if(reset == 1) begin
+	 state_counter <= 8'd0;
+	 src_valid <= 0;
+      end else begin
+	 prev_state_counter <= state_counter;
+	 case(state_counter)
+	   0: begin
+	      src_valid <= 0;
+	      if(src_fifo_count[output_core] >= src_fifo_data[output_core]) begin
+		 state_counter <= state_counter + 1;
+	      end else begin
+		output_core <= (output_core == CORES-1) ? 0 : output_core+1;
+	      end
+	   end
+	   1: begin
+	      if(src_fifo_count[output_core] == 0) begin
+		 src_fifo_rd[output_core] <= 0;
+		 state_counter <= 0;
+		 output_core <= (output_core == CORES-1) ? 0 : output_core+1;
+		 src_valid <= 0;
+	      end else begin
+		 src_fifo_rd[output_core] <= 1;
+		 src_data <= src_fifo_data[output_core];
+		 src_eop <= src_fifo_count[output_core] == 1 ? 1 : 0;
+		 src_sop <= prev_state_counter == 0 ? 1 : 0;
+		 src_valid <= 1;
+	      end
+	   end
+	 endcase // case (state_counter)
+      end
+   end
+
 endmodule // mspe
-   
+
