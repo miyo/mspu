@@ -176,7 +176,13 @@ module dummy_top
 		.data_we(data_we),
 
 		.uart_dout(uart_dout),
-		.uart_we(uart_we)
+		.uart_we(uart_we),
+
+		.fifo_count(32'd0),
+		.fifo_din(32'd0),
+		.fifo_re(),
+		.fifo_dout(),
+		.fifo_we()
 		);
 
 endmodule // dummy_top

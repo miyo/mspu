@@ -17,8 +17,8 @@ module core
    output wire [31:0] uart_dout,
    output wire        uart_we,
 
-   input logic [31:0] fifo_count,
-   input logic [31:0] fifo_din,
+   input wire [31:0] fifo_count,
+   input wire [31:0] fifo_din,
    output logic fifo_re,
    output logic [31:0] fifo_dout,
    output logic fifo_we
