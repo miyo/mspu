@@ -85,40 +85,39 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
    logic [511:0]     snk_fifo_data [CORES-1:0];
    logic [CORES-1:0] snk_fifo_we;
 
-   logic [CORES-1:0] src_fifo_rd[i];
+   logic [CORES-1:0] src_fifo_rd;
    logic [511:0]     src_fifo_data[CORES-1:0];
    logic [5:0] 	     src_fifo_count[CORES-1:0];
 
-   integer j, k, l;
+   integer j;
    always_comb begin
       core_insn_addr[31:INSN_DEPTH+2] = 0;
       core_insn_addr[INSN_DEPTH+2-1:2] = insn_addr;
       core_insn_din = insn_din;
+      core_data_addr[31:DMEM_DEPTH+2] = 0;
+      core_data_addr[DMEM_DEPTH+2-1:2] = data_addr;
+      core_data_din = data_din;
+
       for(j = 0; j < CORES; j = j + 1) begin
 	 if(core_insn_addr[CORES+INSN_DEPTH+2-1:INSN_DEPTH+2] == j) begin
 	    core_insn_we[j] = insn_we;
 	 end else begin
 	    core_insn_we[j] = 1'b0;
 	 end
-      end
-
-      core_data_addr[31:DMEM_DEPTH+2] = 0;
-      core_data_addr[DMEM_DEPTH+2-1:2] = data_addr;
-      core_data_din = data_din;
-      for(k = 0; k < CORES; k = k+ 1) begin
-	 if(core_data_addr[CORES+DMEM_DEPTH+2-1:DMEM_DEPTH+2] == k) begin
-	    core_data_we[k] = data_we;
+	 if(core_data_addr[CORES+DMEM_DEPTH+2-1:DMEM_DEPTH+2] == j) begin
+	    core_data_we[j] = data_we;
 	 end else begin
-	    core_data_we[k] = 1'b0;
+	    core_data_we[j] = 1'b0;
 	 end
-      end
 
-      for(l = 0; l < CORES; l = l + 1) begin
+	 snk_fifo_data[j] = snk_data;
+	 snk_fifo_we[j] = snk_valid;
+	 
 	 uart_we = 1'b0;
 	 uart_dout = 32'h0000_0000;
-	 if(core_uart_we[l]) begin
-	    uart_we = core_uart_we[l];
-	    uart_dout = core_uart_dout[l];
+	 if(core_uart_we[j]) begin
+	    uart_we = core_uart_we[j];
+	    uart_dout = core_uart_dout[j];
 	 end
       end
    end
@@ -126,7 +125,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
    genvar i;
    generate
       for(i = 0; i < CORES; i = i + 1) begin : mspe_cores
-	 core(
+	 core core_i(
 	      .clk(clk),
 	      .reset(reset),
 	      .run(core_run[i]),
@@ -150,7 +149,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 	      );
 
 	 // to core
-         fifo_ft_512_64_to_32_1024 (
+         fifo_ft_512_64_to_32_1024 snk_fifo(
 				    .data    (snk_fifo_data[i]), //   input,   width = 512,  fifo_input.datain
 				    .wrreq   (snk_fifo_we[i]),   //   input,    width = 1,            .wrreq
 				    .rdreq   (core_fifo_re[i]),    //   input,    width = 1,            .rdreq
@@ -164,7 +163,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 				    );
 
 	 // from core
-         fifo_ft_32_1024_to_512_64 (
+         fifo_ft_32_1024_to_512_64 src_fifo(
 				    .data    (core_fifo_dout[i]), //   input,   width = 32,  fifo_input.datain
 				    .wrreq   (core_fifo_we[i]),   //   input,    width = 1,            .wrreq
 				    .rdreq   (src_fifo_rd[i]),    //   input,    width = 1,            .rdreq
@@ -177,9 +176,6 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 				    .wrfull  ()   //  output,    width = 1,            .wrfull
 				    );
 
-	 assign snk_fifo_data[i] = snk_data;
-	 assign snk_fifo_we[i] = snk_valid;
-	 
       end // block: mspe_cores
    endgenerate
 
