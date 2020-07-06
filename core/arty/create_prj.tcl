@@ -20,10 +20,10 @@ set source_files { \
 		../mul.sv \
 		../div.sv \
 		../shift.sv \
+		../../peripheral/clk_div.v \
+		../../peripheral/uart_rx.v \
+		../../peripheral/uart_tx.v \
 		arty_top.sv \
-		clk_div.v \
-		uart_rx.v \
-		uart_tx.v \
 	  }
 set constraint_files {./arty.xdc}
 

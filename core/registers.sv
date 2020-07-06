@@ -37,37 +37,47 @@ module registers
     end
 
     /* verilator lint_off UNUSED */
-    logic [31:0] ra = mem[1]; // Return address
-    logic [31:0] sp = mem[2]; // Stack pointer
-    logic [31:0] gp = mem[3]; // Global pointer
-    logic [31:0] tp = mem[4]; // Thread pointer
-    logic [31:0] t0 = mem[5]; // Temporaries
-    logic [31:0] t1 = mem[6]; // Temporaries
-    logic [31:0] t2 = mem[7]; // Temporaries
-    logic [31:0] s0 = mem[8]; // s0/fp saved register/frame pointer
-    logic [31:0] s1 = mem[9]; // s1 saved register
-    logic [31:0] a0 = mem[10]; // Function arguments/return values
-    logic [31:0] a1 = mem[11]; // Function arguments/return values
-    logic [31:0] a2 = mem[12]; // Function arguments
-    logic [31:0] a3 = mem[13]; // Function arguments
-    logic [31:0] a4 = mem[14]; // Function arguments
-    logic [31:0] a5 = mem[15]; // Function arguments
-    logic [31:0] a6 = mem[16]; // Function arguments
-    logic [31:0] a7 = mem[17]; // Function arguments
-    logic [31:0] s2 = mem[18]; // Saved register
-    logic [31:0] s3 = mem[19]; // Saved register
-    logic [31:0] s4 = mem[20]; // Saved register
-    logic [31:0] s5 = mem[21]; // Saved register
-    logic [31:0] s6 = mem[22]; // Saved register
-    logic [31:0] s7 = mem[23]; // Saved register
-    logic [31:0] s8 = mem[24]; // Saved register
-    logic [31:0] s9 = mem[25]; // Saved register
-    logic [31:0] s10 = mem[26]; // Saved register
-    logic [31:0] s11 = mem[27]; // Saved register
-    logic [31:0] t3 = mem[28]; // Temporaries
-    logic [31:0] t4 = mem[29]; // Temporaries
-    logic [31:0] t5 = mem[30]; // Temporaries
-    logic [31:0] t6 = mem[31]; // Temporaries
+    logic [31:0] ra;
+    logic [31:0] sp;
+    logic [31:0] gp;
+    logic [31:0] tp;
+    logic [31:0] t0,t1,t2,t3,t4,t5,t6;
+    logic [31:0] s0,s1,s2,s3,s4,s5,s6,s7,s8,s9,s10,s11;
+    logic [31:0] a0,a1,a2,a3,a4,a5,a6,a7;
+
+    always_comb begin
+	ra = mem[1]; // Return address
+	sp = mem[2]; // Stack pointer
+	gp = mem[3]; // Global pointer
+	tp = mem[4]; // Thread pointer
+	t0 = mem[5]; // Temporaries
+	t1 = mem[6]; // Temporaries
+	t2 = mem[7]; // Temporaries
+	s0 = mem[8]; // s0/fp saved register/frame pointer
+	s1 = mem[9]; // s1 saved register
+	a0 = mem[10]; // Function arguments/return values
+	a1 = mem[11]; // Function arguments/return values
+	a2 = mem[12]; // Function arguments
+	a3 = mem[13]; // Function arguments
+	a4 = mem[14]; // Function arguments
+	a5 = mem[15]; // Function arguments
+	a6 = mem[16]; // Function arguments
+	a7 = mem[17]; // Function arguments
+	s2 = mem[18]; // Saved register
+	s3 = mem[19]; // Saved register
+	s4 = mem[20]; // Saved register
+	s5 = mem[21]; // Saved register
+	s6 = mem[22]; // Saved register
+	s7 = mem[23]; // Saved register
+	s8 = mem[24]; // Saved register
+	s9 = mem[25]; // Saved register
+	s10 = mem[26]; // Saved register
+	s11 = mem[27]; // Saved register
+	t3 = mem[28]; // Temporaries
+	t4 = mem[29]; // Temporaries
+	t5 = mem[30]; // Temporaries
+	t6 = mem[31]; // Temporaries
+    end
     /* verilator lint_on UNUSED */
 
 endmodule // registers

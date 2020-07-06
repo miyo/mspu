@@ -12,11 +12,11 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
      input wire          csr_read,
      input wire [3:0]    csr_byteenable,
     
-     input wire [CORES+INSN_DEPTH+2-1:0] insn_addr,
+     input wire [$clog2(CORES)+INSN_DEPTH+2-1:0] insn_addr,
      input wire [31:0] insn_din,
      input wire        insn_we,
 
-     input wire [CORES+DMEM_DEPTH+2-1:0] data_addr,
+     input wire [$clog2(CORES)+DMEM_DEPTH+2-1:0] data_addr,
      input wire [31:0] data_din,
      input wire        data_we,
 
@@ -100,12 +100,12 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 	core_data_din = data_din;
 
 	for(j = 0; j < CORES; j = j + 1) begin
-	    if(core_insn_addr[CORES+INSN_DEPTH+2-1:INSN_DEPTH+2] == j) begin
+	    if(insn_addr[$clog2(CORES)+INSN_DEPTH+2-1:INSN_DEPTH+2] == j) begin
 		core_insn_we[j] = insn_we;
 	    end else begin
 		core_insn_we[j] = 1'b0;
 	    end
-	    if(core_data_addr[CORES+DMEM_DEPTH+2-1:DMEM_DEPTH+2] == j) begin
+	    if(data_addr[$clog2(CORES)+DMEM_DEPTH+2-1:DMEM_DEPTH+2] == j) begin
 		core_data_we[j] = data_we;
 	    end else begin
 		core_data_we[j] = 1'b0;

@@ -111,10 +111,11 @@ module data_memory#(parameter DEPTH = 12)
 	mem_raddr[0] = addr[DEPTH-1:2];
 	mem_oe = 4'b1111;
 
+	pa0 = unsigned_flag ? L24 : mem_dout[31] ? H24 : L24;
+
 	if(addr == UART_ADDR) begin
 	    rd0 = 32'h0;
 	end else begin
-	    pa0 = unsigned_flag ? L24 : mem_dout[31] ? H24 : L24;
 	    case(addr[1:0])
 		2'b00:   rd0 = mem_dout;
 		2'b01:   rd0 = {pa0[ 7:0], mem_dout[31:8]};
@@ -125,7 +126,10 @@ module data_memory#(parameter DEPTH = 12)
 	end
 	
 	case(bytes)
-	    2'b00: rd1 = rd0;
+	    2'b00: begin
+		rd1 = rd0;
+		pa1 = 0;
+	    end
 	    2'b01: begin
 		pa1 = unsigned_flag ? L24 : rd0[7] ? H24 : L24;
 		rd1 = {pa1[23:0], rd0[ 7: 0]};
@@ -134,7 +138,10 @@ module data_memory#(parameter DEPTH = 12)
 		pa1 = unsigned_flag ? L24 : rd0[15] ? H24 : L24;
 		rd1 = {pa1[15:0], rd0[15: 0]};
 	    end
-	    default: rd1 = rd0;
+	    default: begin
+		rd1 = rd0;
+		pa1 = 0;
+	    end
 	endcase // case (bytes)
     end
 
