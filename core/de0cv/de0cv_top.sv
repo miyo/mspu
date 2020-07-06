@@ -153,7 +153,7 @@ module de0cv_top
 				  .wrusedw(wrusedw)
 				  );
 
-    uart_tx#(.sys_clk(100000000), .rate(115200))
+    uart_tx#(.sys_clk(50000000), .rate(115200))
     uart_tx_i(.clk(clk),
 	      .reset(reset),
 	      .wr(serial_send_kick),
@@ -171,7 +171,7 @@ module de0cv_top
 	end
     end
 
-    uart_rx#(.sys_clk(100000000), .rate(115200))
+    uart_rx#(.sys_clk(50000000), .rate(115200))
     uart_rx_i(.clk(clk),
 	      .reset(reset),
 	      .din(uart_rxi),
