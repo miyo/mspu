@@ -25,19 +25,19 @@ module de0cv_top
     assign GPIO_1[35] = uart_txo;
     assign uart_rxi = GPIO_1[33];
 
-    (* mark_debug *) logic [31:0] uart_dout;
-    (* mark_debug *) logic uart_we;
+    (* preserve, noprune, mark_debug *) logic [31:0] uart_dout;
+    (* preserve, noprune, mark_debug *) logic uart_we;
 
     logic [31:0] run_counter = 32'd100;
-    (* mark_debug *) logic run = 0;
+    (* preserve, noprune, mark_debug *) logic run = 0;
 
-    (* mark_debug *) logic [31:0] insn_addr;
-    (* mark_debug *) logic [31:0] insn_din;
-    (* mark_debug *) logic insn_we;
+    (* preserve, noprune, mark_debug *) logic [31:0] insn_addr;
+    (* preserve, noprune, mark_debug *) logic [31:0] insn_din;
+    (* preserve, nopurne, mark_debug *) logic insn_we;
 
-    (* mark_debug *) logic [31:0] data_addr;
-    (* mark_debug *) logic [31:0] data_din;
-    (* mark_debug *) logic data_we;
+    (* preserve, noprune, mark_debug *) logic [31:0] data_addr;
+    (* preserve, noprune, mark_debug *) logic [31:0] data_din;
+    (* preserve, noprune, mark_debug *) logic data_we;
 
     logic rd_en = 1'b0;
     logic [31:0] dout;
@@ -46,9 +46,9 @@ module de0cv_top
     logic serial_send_kick = 1'b0;
     logic uart_ready;
 
-    (* mark_debug *) logic uart_rx_rd;
-    (* mark_debug *) logic uart_rx_rd_d;
-    (* mark_debug *) logic [7:0] uart_rx_dout;
+    (* preserve, noprune, mark_debug *) logic uart_rx_rd;
+    (* preserve, noprune, mark_debug *) logic uart_rx_rd_d;
+    (* preserve, noprune, mark_debug *) logic [7:0] uart_rx_dout;
 
     logic [31:0] insn_counter = 32'd0;
     logic [31:0] data_counter = 32'd0;
@@ -56,7 +56,7 @@ module de0cv_top
     logic [31:0] data_buf;
     logic [31:0] insn_buf;
 
-    (* mark_debug *) logic run_d;
+    (* preserve, noprune, mark_debug *) logic run_d;
 
     always_ff @(posedge clk) begin
 	if(reset == 1) begin
