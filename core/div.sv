@@ -14,6 +14,7 @@ module div
 
     logic [31:0] quotient_r;
     logic [63:0] dividend_r, divider_r;
+    logic [5:0] bits;
     logic negative_flag;
    
     always_comb begin
@@ -22,8 +23,6 @@ module div
 	ready = (bits == 6'd0) ? 1'b1 : 1'b0;
 	ready_pre = (bits == 6'd1) ? 1'b1 : 1'b0;
     end
-
-    logic [5:0] bits;
 
     logic [31:0] quotient_tmp;
     logic [63:0] dividend_tmp;

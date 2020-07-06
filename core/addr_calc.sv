@@ -34,6 +34,7 @@ module addr_calc
 	    npc_en = 1'b1;
 	end else begin
 	    npc_en = 1'b0;
+	    npc = 0;
 	end
     end
 

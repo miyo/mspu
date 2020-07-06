@@ -42,7 +42,10 @@ module mul
 	    MUL_MULH   : mul_r = a_b[63:32];
 	    MUL_MULHSU : mul_r = a_ub[63:32];
 	    MUL_MULHU  : mul_r = ua_ub[63:32];
-	    default: unknown_op_r = 1;
+	    default: begin
+		mul_r = 0;
+		unknown_op_r = 1;
+	    end
 	endcase // case (op)
     end
 

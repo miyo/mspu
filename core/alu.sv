@@ -40,7 +40,10 @@ module alu
 	    ALU_NE  : alu_r = (a == b) ? 32'b0 : 32'b1;
 	    ALU_LT  : alu_r = unsigned_flag ? ((ua < ub)  ? 32'b1 : 32'b0) : ((a < b)  ? 32'b1 : 32'b0);
 	    ALU_GE  : alu_r = unsigned_flag ? ((ua >= ub) ? 32'b1 : 32'b0) : ((a >= b) ? 32'b1 : 32'b0);
-	    default: unknown_op_r = 1;
+	    default: begin
+		unknown_op_r = 1;
+		alu_r = 0;
+	    end
 	endcase // case (op)
     end
 

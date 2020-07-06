@@ -201,6 +201,11 @@ module data_memory#(parameter DEPTH = 12)
 	    mem_we = 4'b1111;
 	end else begin
 	    mem_we = 4'b0000;
+	    mem_waddr[3] = 0;
+	    mem_waddr[2] = 0;
+	    mem_waddr[1] = 0;
+	    mem_waddr[0] = 0;
+	    mem_din = 0;
 	end
     end
 

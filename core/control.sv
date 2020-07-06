@@ -136,6 +136,8 @@ module control
 	    DIV    : param = {2'd0, DIV_DIV, 4'd0, 1'b0, IMM_R, 3'b000, 1'b0, 1'b0, 1'b0, ALU_AND, 1'b0, 1'b0, 2'b00, 1'b1};
 	    REM    : param = {2'd0, DIV_REM, 4'd0, 1'b0, IMM_R, 3'b000, 1'b0, 1'b0, 1'b0, ALU_AND, 1'b0, 1'b0, 2'b00, 1'b1};
 
+	    default: param = 0;
+
 	endcase // case (insn)
     end
 
