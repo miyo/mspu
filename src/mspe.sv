@@ -5,7 +5,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
      input wire clk,
      input wire reset,
 
-     input wire [1:0]    csr_address,
+     input wire [4:0]    csr_address,
      input wire [31:0]   csr_writedata,
      input wire          csr_write,
      output logic [31:0] csr_readdata,
@@ -36,7 +36,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
      input wire src_ready
      );
 
-    localparam VERSION = 32'h0000_0001;
+    localparam VERSION = 32'h3434_0001;
 
     logic [31:0] core_run;
     logic [31:0] core_status;
@@ -44,13 +44,13 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 	if (reset == 1) begin
 	    core_run <= 32'h00000000;
 	end else begin
-	    if ((csr_address == 2'b00) & (csr_write == 1) & (csr_byteenable[0] == 1))
+	    if ((csr_address == 5'd0) & (csr_write == 1) & (csr_byteenable[0] == 1))
               core_run[7:0] <= csr_writedata[7:0];
-	    if ((csr_address == 2'b00) & (csr_write == 1) & (csr_byteenable[1] == 1))
+	    if ((csr_address == 5'd0) & (csr_write == 1) & (csr_byteenable[1] == 1))
               core_run[15:8] <= csr_writedata[15:8];
-	    if ((csr_address == 2'b00) & (csr_write == 1) & (csr_byteenable[2] == 1))
+	    if ((csr_address == 5'd0) & (csr_write == 1) & (csr_byteenable[2] == 1))
               core_run[23:16] <= csr_writedata[23:16];
-	    if ((csr_address == 2'b00) & (csr_write == 1) & (csr_byteenable[3] == 1))
+	    if ((csr_address == 5'd0) & (csr_write == 1) & (csr_byteenable[3] == 1))
               core_run[31:24] <= csr_writedata[31:24];
 	end
     end // always @ (posedge clk)
@@ -60,9 +60,10 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 	    csr_readdata <= 32'h00000000;
 	end else if (csr_read == 1) begin
 	    case (csr_address)
-		2'b00: csr_readdata <= VERSION;
-		2'b01: csr_readdata <= core_run;
-		2'b10: csr_readdata <= core_status;
+		5'd0: csr_readdata <= VERSION;
+		5'd4: csr_readdata <= core_run;
+		5'd8: csr_readdata <= core_status;
+		5'd12: csr_readdata <= core_status;
 		default: csr_readdata <= 32'hDEADBEEF;
 	    endcase
 	end
