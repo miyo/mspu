@@ -487,29 +487,8 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to VGA_R[1]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to VGA_R[2]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to VGA_R[3]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to VGA_VS
-set_global_assignment -name VERILOG_FILE ../../peripheral/uart_tx.v
-set_global_assignment -name VERILOG_FILE ../../peripheral/uart_rx.v
-set_global_assignment -name VERILOG_FILE ../../peripheral/clk_div.v
-set_global_assignment -name SYSTEMVERILOG_FILE de0cv_top.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../decoder.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../div.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../executer.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../instruction_fetch.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../instruction_memory.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../mul.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../registers.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../shift.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../simple_dualportram.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../data_memory.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../data_forwarding.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../core.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../control.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../alu.sv
-set_global_assignment -name SYSTEMVERILOG_FILE ../addr_calc.sv
-set_global_assignment -name QIP_FILE fifo_ft_32_1024_to_32_1024.qip
 set_global_assignment -name ENABLE_SIGNALTAP ON
 set_global_assignment -name USE_SIGNALTAP_FILE output_files/stp1.stp
-set_global_assignment -name SIGNALTAP_FILE output_files/stp1.stp
 set_global_assignment -name SLD_NODE_CREATOR_ID 110 -section_id auto_signaltap_0
 set_global_assignment -name SLD_NODE_ENTITY_NAME sld_signaltap -section_id auto_signaltap_0
 set_global_assignment -name SLD_NODE_PARAMETER_ASSIGNMENT "SLD_RAM_BLOCK_TYPE=AUTO" -section_id auto_signaltap_0
@@ -1028,5 +1007,27 @@ set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[22] -
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[23] -to auto_signaltap_0|vcc -section_id auto_signaltap_0
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[27] -to auto_signaltap_0|vcc -section_id auto_signaltap_0
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[30] -to auto_signaltap_0|gnd -section_id auto_signaltap_0
-set_global_assignment -name SLD_FILE db/stp1_auto_stripped.stp
+set_global_assignment -name SDC_FILE core_de0cv.sdc
+set_global_assignment -name VERILOG_FILE ../../peripheral/uart_tx.v
+set_global_assignment -name VERILOG_FILE ../../peripheral/uart_rx.v
+set_global_assignment -name VERILOG_FILE ../../peripheral/clk_div.v
+set_global_assignment -name SYSTEMVERILOG_FILE de0cv_top.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../decoder.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../div.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../executer.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../instruction_fetch.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../instruction_memory.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../mul.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../registers.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../shift.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../simple_dualportram.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../data_memory.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../data_forwarding.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../core.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../control.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../alu.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../addr_calc.sv
+set_global_assignment -name QIP_FILE fifo_ft_32_1024_to_32_1024.qip
+set_global_assignment -name SIGNALTAP_FILE output_files/stp1.stp
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_global_assignment -name SLD_FILE db/stp1_auto_stripped.stp

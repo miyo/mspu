@@ -12,6 +12,17 @@ module arty_top
    output wire uart_txo
    );
 
+    wire sys_clk;
+    wire sys_reset;
+    wire locked;
+
+    clk_wiz_0 clk_wiz_0_i (.clk_out1(sys_clk),
+			   .reset(reset),
+			   .locked(locked),
+			   .clk_in1(clk)
+			   );
+    assign sys_reset = ~locked;
+
     (* mark_debug *) logic [31:0] uart_dout;
     (* mark_debug *) logic uart_we;
 
@@ -45,8 +56,8 @@ module arty_top
 
     (* mark_debug *) logic run_d;
 
-    always_ff @(posedge clk) begin
-	if(reset == 1) begin
+    always_ff @(posedge sys_clk) begin
+	if(sys_reset == 1) begin
 	    run <= 0;
 	    run_d <= 0;
 	    insn_we <= 0;
@@ -99,8 +110,8 @@ module arty_top
     end
 
    
-    core core_i(.clk(clk),
-		.reset(reset),
+    core core_i(.clk(sys_clk),
+		.reset(sys_reset),
 		.run(run),
    
 		.insn_addr(insn_addr),
@@ -121,8 +132,8 @@ module arty_top
 		.fifo_we()
 		);
 
-    fifo_generator_0 fifo_i (.clk(clk),       // input wire clk
-			     .srst(reset),    // input wire srst
+    fifo_generator_0 fifo_i (.clk(sys_clk),       // input wire clk
+			     .srst(sys_reset),    // input wire srst
 			     .din(uart_dout), // input wire [31 : 0] din
 			     .wr_en(uart_we), // input wire wr_en
 			     .rd_en(rd_en),   // input wire rd_en
@@ -132,15 +143,15 @@ module arty_top
 			     .valid(valid)
 			     );
 
-    uart_tx#(.sys_clk(100000000), .rate(115200))
-    uart_tx_i(.clk(clk),
-	      .reset(reset),
+    uart_tx#(.sys_clk(50000000), .rate(115200))
+    uart_tx_i(.clk(sys_clk),
+	      .reset(sys_reset),
 	      .wr(serial_send_kick),
 	      .din(dout),
 	      .dout(uart_txo),
 	      .ready(uart_ready));
 
-    always_ff @(posedge clk) begin
+    always_ff @(posedge sys_clk) begin
 	if(valid == 1'b1 && uart_ready == 1'b1 && serial_send_kick == 1'b0) begin
 	    serial_send_kick <= 1'b1;
 	    rd_en <= 1'b1;
@@ -150,9 +161,9 @@ module arty_top
 	end
     end
 
-    uart_rx#(.sys_clk(100000000), .rate(115200))
-    uart_rx_i(.clk(clk),
-	      .reset(reset),
+    uart_rx#(.sys_clk(50000000), .rate(115200))
+    uart_rx_i(.clk(sys_clk),
+	      .reset(sys_reset),
 	      .din(uart_rxi),
 	      .rd(uart_rx_rd),
 	      .dout(uart_rx_dout));

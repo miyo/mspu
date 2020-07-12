@@ -15,7 +15,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
      input wire [$clog2(CORES)+INSN_DEPTH+2-1:0] insn_addr,
      input wire [31:0] insn_din,
      input wire        insn_we,
-
+     
      input wire [$clog2(CORES)+DMEM_DEPTH+2-1:0] data_addr,
      input wire [31:0] data_din,
      input wire        data_we,
@@ -36,9 +36,11 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
      input wire src_ready
      );
 
+    localparam VERSION = 32'h0000_0001;
+
     logic [31:0] core_run;
     logic [31:0] core_status;
-    always @ (posedge clk) begin
+    always_ff @(posedge clk) begin
 	if (reset == 1) begin
 	    core_run <= 32'h00000000;
 	end else begin
@@ -53,14 +55,15 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 	end
     end // always @ (posedge clk)
 
-    always @ (posedge clk) begin
+    always_ff @ (posedge clk) begin
 	if (reset == 1) begin
 	    csr_readdata <= 32'h00000000;
 	end else if (csr_read == 1) begin
 	    case (csr_address)
-		2'b00: csr_readdata <= core_run;
-		2'b01: csr_readdata <= core_status;
-		default:  csr_readdata <= 32'hDEADBEEF;
+		2'b00: csr_readdata <= VERSION;
+		2'b01: csr_readdata <= core_run;
+		2'b10: csr_readdata <= core_status;
+		default: csr_readdata <= 32'hDEADBEEF;
 	    endcase
 	end
     end

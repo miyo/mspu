@@ -38,6 +38,7 @@ add_files -fileset constrs_1 -norecurse $constraint_files
 add_files -fileset sim_1 -norecurse $sim_files
 
 import_ip -files fifo_generator_0.xci
+import_ip -files clk_wiz_0.xci
 
 update_compile_order -fileset sources_1
 update_compile_order -fileset sim_1
