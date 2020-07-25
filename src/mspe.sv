@@ -55,17 +55,41 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 	end
     end // always @ (posedge clk)
 
+    logic [31:0] insn_addr_d, insn_din_d;
+    logic [31:0] data_addr_d, data_din_d;
+
     always_ff @ (posedge clk) begin
 	if (reset == 1) begin
 	    csr_readdata <= 32'h00000000;
 	end else if (csr_read == 1) begin
 	    case (csr_address)
 		5'd0: csr_readdata <= VERSION;
-		5'd4: csr_readdata <= core_run;
-		5'd8: csr_readdata <= core_status;
-		5'd12: csr_readdata <= core_status;
+		5'd1: csr_readdata <= core_run;
+		5'd2: csr_readdata <= core_status;
+		5'd3: csr_readdata <= insn_addr_d;
+		5'd4: csr_readdata <= insn_din_d;
+		5'd5: csr_readdata <= data_addr_d;
+		5'd6: csr_readdata <= data_din_d;
 		default: csr_readdata <= 32'hDEADBEEF;
-	    endcase
+	    endcase // case (csr_address)
+	end
+    end
+
+    always_ff @ (posedge clk) begin
+	if (reset == 1) begin
+	    insn_addr_d <= 32'hFFFFFFFF;
+	    insn_din_d <= 32'hFFFFFFFF;
+	    data_addr_d <= 32'hFFFFFFFF;
+	    data_din_d <= 32'hFFFFFFFF;
+	end else begin
+	    if(insn_we == 1) begin
+		insn_addr_d <= insn_addr;
+		insn_din_d <= insn_din;
+	    end
+	    if(data_we == 1) begin
+		data_addr_d <= data_addr;
+		data_din_d <= data_din;
+	    end
 	end
     end
     
