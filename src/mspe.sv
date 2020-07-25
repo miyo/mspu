@@ -40,7 +40,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
      input  wire           m0_readdatavalid,
      output wire [3-1:0]   m0_burstcount,
      output wire [512-1:0] m0_writedata,
-     output wire [32-1:0]  m0_address,
+     output wire [64-1:0]  m0_address,
      output wire           m0_write,
      output wire           m0_read,
      output wire [63:0]    m0_byteenable,
@@ -56,7 +56,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 
     logic [3-1:0] csr_burstcount_reg;
     logic [512-1:0] csr_writedata_reg;
-    logic [32-1:0]  csr_address_reg;
+    logic [64-1:0]  csr_address_reg;
     logic csr_write_reg;
     logic csr_read_reg;
     logic [63:0] csr_byteenable_reg;
@@ -92,8 +92,15 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 	end else begin
 	    csr_write_kick_d <= csr_write_kick;
 	    csr_read_kick_d  <= csr_read_kick;
-	    csr_write_reg <= csr_write_kick & csr_write_kick_d;
-	    csr_read_reg  <= csr_read_kick & csr_read_kick_d;
+	    if(csr_write_kick == 1 && csr_write_kick_d == 0)
+	      csr_write_reg <= 1;
+	    else if(csr_write_reg == 1 && m0_waitrequest == 0)
+	      csr_write_reg <= 0;
+
+	    if(csr_read_kick == 1 && csr_read_kick_d == 0)
+	      csr_read_reg  <= 1;
+	    else if(csr_read_reg == 1 && m0_waitrequest == 0)
+	      csr_read_reg  <= 0;
 
 	    if(csr_write == 1)begin
 		case (csr_address)
@@ -107,11 +114,12 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 			if (csr_byteenable[3] == 1)
 			  core_run[31:24] <= csr_writedata[31:24];
 		    end
-		    5'd14: begin
+		    5'd13: begin
 			csr_write_kick <= csr_writedata[0];
 			csr_read_kick <= csr_writedata[1];
 		    end
-		    5'd15: csr_address_reg <= csr_writedata;
+		    5'd14: csr_address_reg[63:32] <= csr_writedata;
+		    5'd15: csr_address_reg[31: 0] <= csr_writedata;
 		    5'd16: csr_writedata_reg[511:480] <= csr_writedata;
 		    5'd17: csr_writedata_reg[479:448] <= csr_writedata;
 		    5'd18: csr_writedata_reg[447:416] <= csr_writedata;
