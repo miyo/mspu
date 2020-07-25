@@ -36,7 +36,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
      input wire src_ready
      );
 
-    localparam VERSION = 32'h3434_0001;
+    localparam VERSION = 32'h3434_0002;
 
     logic [31:0] core_run;
     logic [31:0] core_status;
