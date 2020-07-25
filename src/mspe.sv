@@ -83,7 +83,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 	    csr_address_reg     <= 0;
 	    csr_write_reg       <= 0;
 	    csr_read_reg        <= 0;
-	    csr_byteenable_reg  <= 0;
+	    csr_byteenable_reg  <= 64'hFFFFFFFFFFFFFFFF;
 	    csr_debugaccess_reg <= 0;
 	    csr_write_kick      <= 0;
 	    csr_read_kick       <= 0;
