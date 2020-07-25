@@ -33,27 +33,118 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
      output logic src_valid,
      output logic src_sop,
      output logic src_eop,
-     input wire src_ready
+     input wire src_ready,
+
+     input  wire           m0_waitrequest, 
+     input  wire [512-1:0] m0_readdata,
+     input  wire           m0_readdatavalid,
+     output wire [3-1:0]   m0_burstcount,
+     output wire [512-1:0] m0_writedata,
+     output wire [32-1:0]  m0_address,
+     output wire           m0_write,
+     output wire           m0_read,
+     output wire [63:0]    m0_byteenable,
+     output wire           m0_debugaccess
      );
 
     localparam VERSION = 32'h3434_0002;
 
     logic [31:0] core_run;
     logic [31:0] core_status;
+
+    logic [512-1:0] m0_readdata_reg;
+
+    logic [3-1:0] csr_burstcount_reg;
+    logic [512-1:0] csr_writedata_reg;
+    logic [32-1:0]  csr_address_reg;
+    logic csr_write_reg;
+    logic csr_read_reg;
+    logic [63:0] csr_byteenable_reg;
+    logic csr_debugaccess_reg;
+    
+    assign m0_burstcount  = csr_burstcount_reg;
+    assign m0_writedata   = csr_writedata_reg;
+    assign m0_address     = csr_address_reg;
+    assign m0_write       = csr_write_reg;
+    assign m0_read        = csr_read_reg;
+    assign m0_byteenable  = csr_byteenable_reg;
+    assign m0_debugaccess = csr_debugaccess_reg;
+
+    logic csr_write_kick;
+    logic csr_write_kick_d;
+    logic csr_read_kick;
+    logic csr_read_kick_d;
+
     always_ff @(posedge clk) begin
 	if (reset == 1) begin
 	    core_run <= 32'h00000000;
+	    csr_burstcount_reg  <= 1;
+	    csr_writedata_reg   <= 0;
+	    csr_address_reg     <= 0;
+	    csr_write_reg       <= 0;
+	    csr_read_reg        <= 0;
+	    csr_byteenable_reg  <= 0;
+	    csr_debugaccess_reg <= 0;
+	    csr_write_kick      <= 0;
+	    csr_read_kick       <= 0;
+	    csr_write_kick_d    <= 0;
+	    csr_read_kick_d     <= 0;
 	end else begin
-	    if ((csr_address == 5'd0) & (csr_write == 1) & (csr_byteenable[0] == 1))
-              core_run[7:0] <= csr_writedata[7:0];
-	    if ((csr_address == 5'd0) & (csr_write == 1) & (csr_byteenable[1] == 1))
-              core_run[15:8] <= csr_writedata[15:8];
-	    if ((csr_address == 5'd0) & (csr_write == 1) & (csr_byteenable[2] == 1))
-              core_run[23:16] <= csr_writedata[23:16];
-	    if ((csr_address == 5'd0) & (csr_write == 1) & (csr_byteenable[3] == 1))
-              core_run[31:24] <= csr_writedata[31:24];
+	    csr_write_kick_d <= csr_write_kick;
+	    csr_read_kick_d  <= csr_read_kick;
+	    csr_write_reg <= csr_write_kick & csr_write_kick_d;
+	    csr_read_reg  <= csr_read_kick & csr_read_kick_d;
+
+	    if(csr_write == 1)begin
+		case (csr_address)
+		    5'd0: begin
+			if (csr_byteenable[0] == 1)
+			  core_run[7:0] <= csr_writedata[7:0];
+			if (csr_byteenable[1] == 1)
+			  core_run[15:8] <= csr_writedata[15:8];
+			if (csr_byteenable[2] == 1)
+			  core_run[23:16] <= csr_writedata[23:16];
+			if (csr_byteenable[3] == 1)
+			  core_run[31:24] <= csr_writedata[31:24];
+		    end
+		    5'd14: begin
+			csr_write_kick <= csr_writedata[0];
+			csr_read_kick <= csr_writedata[1];
+		    end
+		    5'd15: csr_address_reg <= csr_writedata;
+		    5'd16: csr_writedata_reg[511:480] <= csr_writedata;
+		    5'd17: csr_writedata_reg[479:448] <= csr_writedata;
+		    5'd18: csr_writedata_reg[447:416] <= csr_writedata;
+		    5'd19: csr_writedata_reg[415:384] <= csr_writedata;
+		    5'd20: csr_writedata_reg[383:352] <= csr_writedata;
+		    5'd21: csr_writedata_reg[351:320] <= csr_writedata;
+		    5'd22: csr_writedata_reg[319:288] <= csr_writedata;
+		    5'd23: csr_writedata_reg[287:256] <= csr_writedata;
+		    5'd24: csr_writedata_reg[255:224] <= csr_writedata;
+		    5'd25: csr_writedata_reg[223:192] <= csr_writedata;
+		    5'd26: csr_writedata_reg[191:160] <= csr_writedata;
+		    5'd27: csr_writedata_reg[159:128] <= csr_writedata;
+		    5'd28: csr_writedata_reg[127: 96] <= csr_writedata;
+		    5'd29: csr_writedata_reg[ 95: 64] <= csr_writedata;
+		    5'd30: csr_writedata_reg[ 63: 32] <= csr_writedata;
+		    5'd31: csr_writedata_reg[ 31:  0] <= csr_writedata;
+		    default: begin
+			csr_write_reg <= 0;
+			csr_read_reg <= 0;
+		    end
+		endcase
+	    end
 	end
     end // always @ (posedge clk)
+    
+    always_ff @(posedge clk) begin
+	if (reset == 1) begin
+	    m0_readdata_reg <= -1;
+	end else begin
+	    if(m0_readdatavalid)
+	      m0_readdata_reg <= m0_readdata;
+	end
+    end
 
     logic [31:0] insn_addr_d, insn_din_d;
     logic [31:0] data_addr_d, data_din_d;
@@ -66,10 +157,22 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 		5'd0: csr_readdata <= VERSION;
 		5'd1: csr_readdata <= core_run;
 		5'd2: csr_readdata <= core_status;
-		5'd3: csr_readdata <= insn_addr_d;
-		5'd4: csr_readdata <= insn_din_d;
-		5'd5: csr_readdata <= data_addr_d;
-		5'd6: csr_readdata <= data_din_d;
+		5'd16: csr_readdata <= m0_readdata_reg[511:480];
+		5'd17: csr_readdata <= m0_readdata_reg[479:448];
+		5'd18: csr_readdata <= m0_readdata_reg[447:416];
+		5'd19: csr_readdata <= m0_readdata_reg[415:384];
+		5'd20: csr_readdata <= m0_readdata_reg[383:352];
+		5'd21: csr_readdata <= m0_readdata_reg[351:320];
+		5'd22: csr_readdata <= m0_readdata_reg[319:288];
+		5'd23: csr_readdata <= m0_readdata_reg[287:256];
+		5'd24: csr_readdata <= m0_readdata_reg[255:224];
+		5'd25: csr_readdata <= m0_readdata_reg[223:192];
+		5'd26: csr_readdata <= m0_readdata_reg[191:160];
+		5'd27: csr_readdata <= m0_readdata_reg[159:128];
+		5'd28: csr_readdata <= m0_readdata_reg[127: 96];
+		5'd29: csr_readdata <= m0_readdata_reg[ 95: 64];
+		5'd30: csr_readdata <= m0_readdata_reg[ 63: 32];
+		5'd31: csr_readdata <= m0_readdata_reg[ 31:  0];
 		default: csr_readdata <= 32'hDEADBEEF;
 	    endcase // case (csr_address)
 	end
