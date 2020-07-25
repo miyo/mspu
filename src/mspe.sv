@@ -91,12 +91,12 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 	    csr_read_kick_d     <= 0;
 	end else begin
 	    csr_write_kick_d <= csr_write_kick;
-	    csr_read_kick_d  <= csr_read_kick;
 	    if(csr_write_kick == 1 && csr_write_kick_d == 0)
 	      csr_write_reg <= 1;
 	    else if(csr_write_reg == 1 && m0_waitrequest == 0)
 	      csr_write_reg <= 0;
 
+	    csr_read_kick_d  <= csr_read_kick;
 	    if(csr_read_kick == 1 && csr_read_kick_d == 0)
 	      csr_read_reg  <= 1;
 	    else if(csr_read_reg == 1 && m0_waitrequest == 0)
@@ -137,8 +137,8 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 		    5'd30: csr_writedata_reg[ 63: 32] <= csr_writedata;
 		    5'd31: csr_writedata_reg[ 31:  0] <= csr_writedata;
 		    default: begin
-			csr_write_reg <= 0;
-			csr_read_reg <= 0;
+			csr_write_kick <= 0;
+			csr_read_kick <= 0;
 		    end
 		endcase
 	    end
