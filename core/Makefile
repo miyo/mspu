@@ -22,7 +22,7 @@ sim:
 	./obj_dir/V$(TOP) sample/fact.insn sample/fact.data
 	./obj_dir/V$(TOP) sample/printnum.insn sample/printnum.data
 	./obj_dir/V$(TOP) sample/simple.insn sample/simple.data
-	./obj_dir/V$(TOP) sample/fifo.insn sample/fifo.data
+	./obj_dir/V$(TOP) sample/c/hello-c.insn sample/c/hello-c.data
 
 clean:
 	-rm -rf obj_dir

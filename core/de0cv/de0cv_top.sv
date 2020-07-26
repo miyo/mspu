@@ -38,6 +38,8 @@ module de0cv_top
     (* preserve, noprune, mark_debug *) logic [31:0] data_addr;
     (* preserve, noprune, mark_debug *) logic [31:0] data_din;
     (* preserve, noprune, mark_debug *) logic data_we;
+    logic data_oe = 0;
+    logic [31:0] data_q;
 
     logic rd_en = 1'b0;
     logic [31:0] dout;
@@ -123,15 +125,15 @@ module de0cv_top
 		.data_addr(data_addr),
 		.data_din(data_din),
 		.data_we(data_we),
+		.data_oe(data_oe),
+		.data_q(data_q),
 
 		.uart_dout(uart_dout),
 		.uart_we(uart_we),
 
-		.fifo_count(32'd0),
-		.fifo_din(32'd0),
-		.fifo_re(),
-		.fifo_dout(),
-		.fifo_we()
+		.emit_insn_mon(),
+		.emit_pc_out_mon(),
+		.halt_mon()
 		);
 
     logic [9:0] rdusedw;

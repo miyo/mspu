@@ -13,8 +13,10 @@ module data_memory#(parameter DEPTH = 12)
    /* verilator lint_off UNUSED */
    input wire [31:0] addr_b,
    /* verilator lint_on UNUSED */
-   input wire [31:0] din_b,
-   input wire        we_b,
+   input wire [31:0]  din_b,
+   input wire         we_b,
+   input wire         oe_b,
+   output logic [31:0] dout_b,
    // input
    input wire [31:0] addr,
    input wire [1:0]  bytes,
@@ -34,19 +36,10 @@ module data_memory#(parameter DEPTH = 12)
    output logic [4:0]  reg_rd,
    // peripheral
    output logic [31:0] uart_dout,
-   output logic        uart_we,
-
-   input wire [31:0] fifo_count,
-   input wire [31:0] fifo_din,
-   output logic fifo_re,
-   output logic [31:0] fifo_dout,
-   output logic fifo_we
+   output logic        uart_we
    );
 
     localparam UART_ADDR = 32'h1000_0000;
-    localparam FIFO_DIN_ADDR = 32'hF000_0000;
-    localparam FIFO_CNT_ADDR = 32'hF000_0004;
-    localparam FIFO_DOUT_ADDR = 32'hF000_0008;
 
     logic [DEPTH-2-1:0] mem_raddr[3:0], mem_waddr[3:0];
     logic [31:0] mem_din, mem_dout;
@@ -76,13 +69,6 @@ module data_memory#(parameter DEPTH = 12)
 
     logic [31:0] alu_result_r;
     logic mem_to_reg_in_r;
-    logic fifo_cnt_flag, fifo_cnt_flag_r;
-    logic fifo_din_flag, fifo_din_flag_r;
-
-    assign fifo_cnt_flag = addr == FIFO_CNT_ADDR;
-    assign fifo_din_flag = addr == FIFO_DIN_ADDR;
-
-    assign fifo_re = fifo_din_flag_r & mem_to_reg_in_r;
 
     always_ff @(posedge clk) begin
     	if(run)
@@ -92,12 +78,8 @@ module data_memory#(parameter DEPTH = 12)
     	reg_rd <= rd_in;
 	mem_to_reg_in_r <= mem_to_reg_in;
 	alu_result_r <= alu_result;
-	fifo_cnt_flag_r <= fifo_cnt_flag;
-	fifo_din_flag_r <= fifo_din_flag;
     end
     assign reg_wdata = ~mem_to_reg_in_r ? alu_result_r :
-		       fifo_cnt_flag_r  ? fifo_count   :
-		       fifo_din_flag_r  ? fifo_din     :
 		       rd1;
 
     logic [23:0] L24 = 24'h000000;
@@ -105,11 +87,19 @@ module data_memory#(parameter DEPTH = 12)
     logic [23:0] pa0, pa1;
 
     always_comb begin
-	mem_raddr[3] = addr[DEPTH-1:2];
-	mem_raddr[2] = addr[DEPTH-1:2];
-	mem_raddr[1] = addr[DEPTH-1:2];
-	mem_raddr[0] = addr[DEPTH-1:2];
+	if(oe_b == 1) begin
+	    mem_raddr[3] = addr_b[DEPTH-1:2];
+	    mem_raddr[2] = addr_b[DEPTH-1:2];
+	    mem_raddr[1] = addr_b[DEPTH-1:2];
+	    mem_raddr[0] = addr_b[DEPTH-1:2];
+	end else begin
+	    mem_raddr[3] = addr[DEPTH-1:2];
+	    mem_raddr[2] = addr[DEPTH-1:2];
+	    mem_raddr[1] = addr[DEPTH-1:2];
+	    mem_raddr[0] = addr[DEPTH-1:2];
+	end
 	mem_oe = 4'b1111;
+	dout_b = mem_dout;
 
 	pa0 = unsigned_flag ? L24 : mem_dout[31] ? H24 : L24;
 
@@ -223,15 +213,6 @@ module data_memory#(parameter DEPTH = 12)
 	    uart_we <= 1'b1;
 	end else begin
 	    uart_we <= 1'b0;
-	end
-    end
-
-    always_ff @(posedge clk) begin
-	if(we == 1 && addr == FIFO_DOUT_ADDR) begin
-	    fifo_dout <= wd1;
-	    fifo_we <= 1'b1;
-	end else begin
-	    fifo_we <= 1'b0;
 	end
     end
 

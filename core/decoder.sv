@@ -43,7 +43,10 @@ module decoder
    output logic div_hazard,
    input  wire  div_ready,
    output logic shift_hazard,
-   input  wire  shift_ready
+   input  wire  shift_ready,
+
+   output logic [31:0] emit_insn_mon,
+   output logic [31:0] emit_pc_out_mon
    );
 
 `include "core.svh"
@@ -66,12 +69,15 @@ module decoder
     logic [4:0] rd_out_i;
     logic unsigned_flag_i;
 
-    /* verilator lint_off UNUSED */
     (* mark_debug *) logic [31:0] emit_insn;
     (* mark_debug *) logic [31:0] emit_pc_out;
+    /* verilator lint_off UNUSED */
     (* mark_debug *) logic [4:0]  emit_rs1;
     (* mark_debug *) logic [4:0]  emit_rs2;
     /* verilator lint_on UNUSED */
+
+    assign emit_insn_mon = emit_insn;
+    assign emit_pc_out_mon = emit_pc_out;
 
     logic [1:0] state = 0;
 

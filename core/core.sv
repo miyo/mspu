@@ -13,16 +13,22 @@ module core
    input wire [31:0] data_addr,
    input wire [31:0] data_din,
    input wire        data_we,
+   input wire        data_oe,
+   output wire [31:0] data_q,
 
    output wire [31:0] uart_dout,
    output wire        uart_we,
 
-   input wire [31:0] fifo_count,
-   input wire [31:0] fifo_din,
-   output logic fifo_re,
-   output logic [31:0] fifo_dout,
-   output logic fifo_we
+   output wire [31:0] emit_insn_mon,
+   output wire [31:0] emit_pc_out_mon,
+   output wire halt_mon
    );
+
+    wire [31:0] emit_insn;
+    wire [31:0] emit_pc_out;
+
+    assign emit_insn_mon = emit_insn;
+    assign emit_pc_out_mon = emit_pc_out;
 
     wire run_if, run_id, run_ex;
     
@@ -173,7 +179,10 @@ module core
 		      .div_hazard(div_hazard),
 		      .div_ready(div_ready),
 		      .shift_hazard(shift_hazard),
-		      .shift_ready(shift_ready)
+		      .shift_ready(shift_ready),
+
+		      .emit_insn_mon(emit_insn),
+		      .emit_pc_out_mon(emit_pc_out)
 		      );
 
     data_forwarding data_forwarding_i (.clk(clk),
@@ -261,6 +270,8 @@ module core
 	   .addr_b(data_addr),
 	   .din_b(data_din),
 	   .we_b(data_we),
+	   .oe_b(data_oe),
+	   .dout_b(data_q),
 	   // input
 	   .addr(alu_result),     // from EX
 	   .bytes(alu_bytes_ex),  // from EX
@@ -278,13 +289,29 @@ module core
 	   .reg_rd(reg_rd),
 	   // peripheral
 	   .uart_dout(uart_dout),
-	   .uart_we(uart_we),
-	   .fifo_count(fifo_count),
-	   .fifo_din(fifo_din),
-	   .fifo_re(fifo_re),
-	   .fifo_dout(fifo_dout),
-	   .fifo_we(fifo_we)
+	   .uart_we(uart_we)
 	   );
+
+    logic [3:0] halt_counter;
+    logic halt_flag;
+    always_ff @(posedge clk) begin
+	if(reset == 1) begin
+	    halt_counter <= 4'b0000;
+	    halt_flag <= 0;
+	end else begin
+	    if(emit_insn == 32'h0000006F) begin
+		if(halt_counter == 4'b0111) begin
+		    halt_flag <= 1; // detected 8-times
+		end else begin
+		    halt_counter <= halt_counter + 1;
+		end
+	    end else begin
+		halt_counter <= 4'b0000; // cancel
+		halt_flag <= 0;
+	    end
+	end
+    end
+    assign halt_mon = halt_flag;
 
 endmodule // core
 
