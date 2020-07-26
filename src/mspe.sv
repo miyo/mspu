@@ -11,30 +11,8 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
      output logic [31:0] csr_readdata,
      input wire          csr_read,
      input wire [3:0]    csr_byteenable,
-    
-     input wire [$clog2(CORES)+INSN_DEPTH+2-1:0] insn_addr,
-     input wire [31:0] insn_din,
-     input wire        insn_we,
-     
-     input wire [$clog2(CORES)+DMEM_DEPTH+2-1:0] data_addr,
-     input wire [31:0] data_din,
-     input wire        data_we,
 
-     output logic [31:0] uart_dout,
-     output logic        uart_we,
-
-     input wire [511:0] snk_data,
-     input wire snk_valid,
-     input wire snk_sop,
-     input wire snk_eop,
-     output logic snk_ready,
-
-     output logic [511:0] src_data,
-     output logic src_valid,
-     output logic src_sop,
-     output logic src_eop,
-     input wire src_ready,
-
+     // to access DRAM with CSR
      input  wire           m0_waitrequest, 
      input  wire [512-1:0] m0_readdata,
      input  wire           m0_readdatavalid,
@@ -44,7 +22,31 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
      output wire           m0_write,
      output wire           m0_read,
      output wire [63:0]    m0_byteenable,
-     output wire           m0_debugaccess
+     output wire           m0_debugaccess,
+
+     // to access DRAM to read insn/data
+     input  wire           m1_waitrequest, 
+     input  wire [512-1:0] m1_readdata,
+     input  wire           m1_readdatavalid,
+     output wire [3-1:0]   m1_burstcount,
+     output wire [512-1:0] m1_writedata,
+     output wire [64-1:0]  m1_address,
+     output wire           m1_write,
+     output wire           m1_read,
+     output wire [63:0]    m1_byteenable,
+     output wire           m1_debugaccess,
+
+     input wire [511:0] snk_data,
+     input wire snk_valid,
+     input wire snk_sop,
+     input wire snk_eop,
+     output logic snk_ready,
+     
+     output logic [511:0] src_data,
+     output logic src_valid,
+     output logic src_sop,
+     output logic src_eop,
+     input wire src_ready
      );
 
     localparam VERSION = 32'h3434_0002;
@@ -154,9 +156,6 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 	end
     end
 
-    logic [31:0] insn_addr_d, insn_din_d;
-    logic [31:0] data_addr_d, data_din_d;
-
     always_ff @ (posedge clk) begin
 	if (reset == 1) begin
 	    csr_readdata <= 32'h00000000;
@@ -186,24 +185,13 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 	end
     end
 
-    always_ff @ (posedge clk) begin
-	if (reset == 1) begin
-	    insn_addr_d <= 32'hFFFFFFFF;
-	    insn_din_d <= 32'hFFFFFFFF;
-	    data_addr_d <= 32'hFFFFFFFF;
-	    data_din_d <= 32'hFFFFFFFF;
-	end else begin
-	    if(insn_we == 1) begin
-		insn_addr_d <= insn_addr;
-		insn_din_d <= insn_din;
-	    end
-	    if(data_we == 1) begin
-		data_addr_d <= data_addr;
-		data_din_d <= data_din;
-	    end
-	end
-    end
-    
+    logic [$clog2(CORES)+INSN_DEPTH+2-1:0] loader_insn_addr;
+    logic [31:0] loader_insn_dout;
+    logic loader_insn_we;
+    logic [$clog2(CORES)+DMEM_DEPTH+2-1:0] loader_data_addr;
+    logic [31:0] loader_data_dout;
+    logic loader_data_we;
+
     logic [31:0]      core_insn_addr;
     logic [31:0]      core_insn_din;
     logic [CORES-1:0] core_insn_we;
@@ -211,157 +199,288 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
     logic [31:0]      core_data_addr;
     logic [31:0]      core_data_din;
     logic [CORES-1:0] core_data_we;
+    logic [CORES-1:0] core_data_oe;
+    logic [31:0]      core_data_q[CORES-1:0];
+    logic [CORES-1:0] core_halt;
     
     logic [31:0]      core_uart_dout[CORES-1:0];
     logic [CORES-1:0] core_uart_we;
 
-    logic [31:0]      core_fifo_count[CORES-1:0];
-    logic [31:0]      core_fifo_din[CORES-1:0];
-    logic [CORES-1:0] core_fifo_re;
+    logic [CORES-1:0] core_snk_sop;
+    logic [CORES-1:0] core_snk_eop;
+    logic [CORES-1:0] core_snk_valid;
+    logic [511:0] core_snk_din;
 
-    logic [31:0]      core_fifo_dout[CORES-1:0];
-    logic [CORES-1:0] core_fifo_we;
-
-    logic [511:0]     snk_fifo_data [CORES-1:0];
-    logic [CORES-1:0] snk_fifo_we;
-
-    logic [CORES-1:0] src_fifo_re;
-    logic [511:0]     src_fifo_data[CORES-1:0];
-    logic [31:0]      src_fifo_count[CORES-1:0];
-
-    integer j;
-    always_comb begin
-	core_insn_addr[31:INSN_DEPTH+2] = 0;
-	core_insn_addr[INSN_DEPTH+2-1:2] = insn_addr;
-	core_insn_din = insn_din;
-	core_data_addr[31:DMEM_DEPTH+2] = 0;
-	core_data_addr[DMEM_DEPTH+2-1:2] = data_addr;
-	core_data_din = data_din;
-
-	for(j = 0; j < CORES; j = j + 1) begin
-	    if(insn_addr[$clog2(CORES)+INSN_DEPTH+2-1:INSN_DEPTH+2] == j) begin
-		core_insn_we[j] = insn_we;
-	    end else begin
-		core_insn_we[j] = 1'b0;
-	    end
-	    if(data_addr[$clog2(CORES)+DMEM_DEPTH+2-1:DMEM_DEPTH+2] == j) begin
-		core_data_we[j] = data_we;
-	    end else begin
-		core_data_we[j] = 1'b0;
-	    end
-
-	    snk_fifo_data[j] = snk_data;
-	    snk_fifo_we[j] = snk_valid;
-	    
-	    uart_we = 1'b0;
-	    uart_dout = 32'h0000_0000;
-	    if(core_uart_we[j]) begin
-		uart_we = core_uart_we[j];
-		uart_dout = core_uart_dout[j];
-	    end
-	end
-    end
+    logic [CORES-1:0] core_src_req;
+    logic [CORES-1:0] core_src_sop;
+    logic [CORES-1:0] core_src_eop;
+    logic [CORES-1:0] core_src_valid;
+    logic [511:0] core_src_q[CORES-1:0];
 
     genvar i;
     generate
 	for(i = 0; i < CORES; i = i + 1) begin : mspe_cores
-	    core core_i(
-			.clk(clk),
-			.reset(reset),
-			.run(core_run[i]),
-		
-			.insn_addr(core_insn_addr),
-			.insn_din(core_insn_din),
-			.insn_we(core_insn_we[i]),
 
-			.data_addr(core_data_addr),
-			.data_din(core_data_din),
-			.data_we(core_data_we[i]),
+	    core_wrapper core_i(
+				.clk(clk),
+				.reset(reset),
+				.run(core_run[i]),
+				.insn_addr(core_insn_addr),
+				.insn_din(core_insn_din),
+				.insn_we(core_insn_we[i]),
+				.data_addr(core_data_addr),
+				.data_din(core_data_din),
+				.data_we(core_data_we[i]),
+				.data_oe(core_data_oe[i]),
+				.data_q(core_data_q[i]),
+				.uart_dout(core_uart_dout[i]),
+				.uart_we(core_uart_we[i]),
+				.emit_insn_mon(),
+				.emit_pc_out_mon(),
+				.halt_mon(core_halt[i]),
 
-			.uart_dout(core_uart_dout[i]),
-			.uart_we(core_uart_we[i]),
+				.snk_sop(core_snk_sop[i]),
+				.snk_eop(core_snk_eop[i]),
+				.snk_valid(core_snk_valid[i]),
+				.snk_din(core_snk_din),
 
-			.fifo_count(core_fifo_count[i]),
-			.fifo_din(core_fifo_din[i]),
-			.fifo_re(core_fifo_re[i]),
-			.fifo_dout(core_fifo_dout[i]),
-			.fifo_we(core_fifo_we[i])
-			);
-
-	    // to core
-	    sink_fifo#(.DEVICE(DEVICE))
-	    sink_fifo_i(
-			.wr_clk(clk),
-			.wr_rst(reset),
-			.rd_clk(clk),
-			.rd_rst(reset),
-			.din(snk_fifo_data[i]),
-			.we(snk_fifo_we[i]),
-			.re(core_fifo_re[i]),
-			.q(core_fifo_din[i]),
-			.rd_count(core_fifo_count[i]),
-			.wr_count(),
-			.empty(),
-			.full()
-			);
-	    
-	    // from core
-            src_fifo#(.DEVICE(DEVICE))
-	    src_fifo_i(
-		       .wr_clk(clk),
-		       .wr_rst(reset),
-		       .rd_clk(clk),
-		       .rd_rst(reset),
-		       .din(core_fifo_dout[i]),
-		       .we(core_fifo_we[i]),
-		       .re(src_fifo_re[i]),
-		       .q(src_fifo_data[i]),
-		       .rd_count(src_fifo_count[i]),
-		       .wr_count(),
-		       .empty(),
-		       .full()
-		       );
+				.src_req(core_src_req[i]),
+				.src_sop(core_src_sop[i]),
+				.src_eop(core_src_eop[i]),
+				.src_valid(core_src_valid[i]),
+				.src_q(core_src_q[i]));
 
 	end // block: mspe_cores
     endgenerate
 
-    assign snk_ready = 1'b1;
+    logic core_manager_init_busy;
+    logic core_valid;
+    logic [$clog2(CORES)-1:0] core_id;
+    logic core_request;
+    logic core_release;
+    logic [$clog2(CORES)-1:0] released_core_id;
 
-    logic [31:0] output_core;
-    logic [7:0] 	state_counter = 8'd0;
-    logic [7:0] 	prev_state_counter = 8'd0;
+`ifdef CORE_OoO_ASSIGNMENT
+    core_manager(.CORES(4)) core_manager_i(.clk(clk),
+					   .reset(reset),
+					   .init_busy(core_manager_init_busy),
+					   .core_valid(core_valid),
+					   .core_id(core_id),
+					   .core_request(core_request),
+					   .core_release(core_release),
+					   .released_core_id(released_core_id));
+`else
+
+    assign core_manager_init_busy = 0;
+    core_simple_assignment#(.CORES(4))
+    core_simple_assignment_i(
+			     .clk(clk),
+			     .reset(reset),
+			     .core_valid(core_valid),
+			     .core_id(core_id),
+			     .core_request(core_request),
+			     .core_release(core_release),
+			     .released_core_id(released_core_id));
+
+`endif
+
+
+    logic loader_kick, loader_busy;
+    logic [63:0] loader_memory_base_addr;
+    logic [$clog2(CORES)-1:0] loader_target_core;
+
+    data_loader#(.CORES(CORES), .INSN_DEPTH(INSN_DEPTH), .DMEM_DEPTH(DMEM_DEPTH))
+    data_loader_i(.clk(clk),
+		  .reset(reset),
+		  .kick(loader_kick),
+		  .busy(loader_busy),
+		  .memory_base_addr(loader_memory_base_addr),
+		  .target_core(loader_target_core),
+		  .insn_addr(loader_insn_addr),
+		  .insn_dout(loader_insn_dout),
+		  .insn_we(loader_insn_we),
+		  .data_addr(loader_data_addr),
+		  .data_dout(loader_data_dout),
+		  .data_we(loader_data_we),
+		  .m0_waitrequest(m1_waitrequest), 
+		  .m0_readdata(m1_readdata),
+		  .m0_readdatavalid(m1_readdatavalid),
+		  .m0_burstcount(m1_burstcount),
+		  .m0_writedata(m1_writedata),
+		  .m0_address(m1_address),
+		  .m0_write(m1_write),
+		  .m0_read(m1_read),
+		  .m0_byteenable(m1_byteenable)
+		  );
+
+    logic [$clog2(CORES)-1:0] target_core;
+    logic target_core_valid;
+    logic target_snk_sop;
+    logic target_snk_eop;
+    logic target_snk_valid;
+    logic [511:0] target_snk_data;
+
+    stream_data_parser#(.CORES(CORES))
+    stream_data_parser_i(
+			 .clk(clk),
+			 .reset(reset),
+
+			 .snk_data(snk_data),
+			 .snk_valid(snk_valid),
+			 .snk_ready(snk_ready),
+
+			 .core_valid(core_valid),
+			 .core_id(core_id),
+
+			 .target_core(target_core),
+			 .target_core_valid(target_core_valid),
+			 .target_snk_sop(target_snk_sop),
+			 .target_snk_eop(target_snk_eop),
+			 .target_snk_valid(target_snk_valid),
+			 .target_snk_data(target_snk_data),
+
+			 .loader_kick(loader_kick),
+			 .loader_memory_base_addr(loader_memory_base_addr)
+			 );
+
+    assign loader_target_core = target_core;
+    assign core_request = target_core_valid;
+
+    logic [$clog2(CORES)-1:0] cur_loader_id;
+    logic cur_loader_valid;
+    logic cur_loader_consume;
+
+    logic [$clog2(CORES)-1:0] run_enqueue_id;
+    logic run_enqueue_valid;
+    logic [$clog2(CORES)-1:0] cur_run_id;
+    logic cur_run_valid;
+    logic cur_run_consume;
+
+`ifdef CORE_OoO_ASSIGNMENT
+
+    core_task_queue#(.CORES(4)) loader_task_queue(
+						  .clk(clk),
+						  .reset(reset),
+						  .enqueue_id(target_core),
+						  .enqueue_valid(loader_kick),
+						  .current_id(cur_loader_id),
+						  .current_valid(cur_loader_valid),
+						  .current_consume(cur_loader_consume)
+						  );
+
+    core_task_queue#(.CORES(4)) run_task_queue(
+					       .clk(clk),
+					       .reset(reset),
+					       .enqueue_id(run_enqueue_id),
+					       .enqueue_valid(run_enqueue_valid),
+					       .current_id(cur_run_id),
+					       .current_valid(cur_run_valid),
+					       .current_consume(cur_run_consume)
+					       );
+`else // !`ifdef CORE_OoO_ASSIGNMENT
+
+    core_simple_queue#(.CORES(4)) loader_task_queue(
+						    .clk(clk),
+						    .reset(reset),
+						    .enqueue_id(target_core),
+						    .enqueue_valid(loader_kick),
+						    .current_id(cur_loader_id),
+						    .current_valid(cur_loader_valid),
+						    .current_consume(cur_loader_consume)
+						    );
+    core_simple_queue#(.CORES(4)) run_task_queue(
+						 .clk(clk),
+						 .reset(reset),
+						 .enqueue_id(run_enqueue_id),
+						 .enqueue_valid(run_enqueue_valid),
+						 .current_id(cur_run_id),
+						 .current_valid(cur_run_valid),
+						 .current_consume(cur_run_consume)
+						 );
+    
+`endif
+
+    logic loader_busy_d;
+    logic cur_core_halt, cur_core_halt_d;
     always_ff @(posedge clk) begin
 	if(reset == 1) begin
-	    state_counter <= 8'd0;
-	    src_valid <= 0;
+	    loader_busy_d <= 0;
+	    cur_loader_consume <= 0;
+	    run_enqueue_valid <= 0;
+	    cur_core_halt_d <= 0;
+	    cur_run_consume <= 0;
+	    core_release <= 0;
 	end else begin
-	    prev_state_counter <= state_counter;
-	    case(state_counter)
-		0: begin
-		    src_valid <= 0;
-		    if(src_fifo_count[output_core] >= src_fifo_data[output_core]) begin
-			state_counter <= state_counter + 1;
-		    end else begin
-			output_core <= (output_core == CORES-1) ? 0 : output_core+1;
-		    end
-		end
-		1: begin
-		    if(src_fifo_count[output_core] == 0) begin
-			src_fifo_re[output_core] <= 0;
-			state_counter <= 0;
-			output_core <= (output_core == CORES-1) ? 0 : output_core+1;
-			src_valid <= 0;
-		    end else begin
-			src_fifo_re[output_core] <= 1;
-			src_data <= src_fifo_data[output_core];
-			src_eop <= src_fifo_count[output_core] == 1 ? 1 : 0;
-			src_sop <= prev_state_counter == 0 ? 1 : 0;
-			src_valid <= 1;
-		    end
-		end
-	    endcase // case (state_counter)
+	    loader_busy_d <= loader_busy;
+	    cur_core_halt_d <= cur_core_halt;
+	    if(cur_loader_valid == 1 && loader_busy == 0 && loader_busy_d == 1) begin
+		cur_loader_consume <= 1;
+		run_enqueue_valid <= 1;
+		run_enqueue_id <= cur_loader_id;
+	    end else begin
+		cur_loader_consume <= 0;
+		run_enqueue_valid <= 0;
+	    end
+	    if(cur_run_valid == 1 && cur_core_halt == 1 && cur_core_halt_d == 0) begin
+		cur_run_consume <= 1;
+		core_release <= 1;
+	    end else begin
+		cur_run_consume <= 0;
+		core_release <= 0;
+	    end
 	end
     end
+
+
+    integer j;
+    always_comb begin
+	core_insn_addr[31:INSN_DEPTH+2] = 0;
+	core_insn_addr[INSN_DEPTH+2-1:0] = loader_insn_addr;
+	core_insn_din = loader_insn_dout;
+	core_data_addr[31:DMEM_DEPTH+2] = 0;
+	core_data_addr[DMEM_DEPTH+2-1:0] = loader_data_addr;
+	core_data_din = loader_data_dout;
+
+	for(j = 0; j < CORES; j = j + 1) begin
+	    if(loader_insn_addr[$clog2(CORES)+INSN_DEPTH+2-1:INSN_DEPTH+2] == j) begin
+		core_insn_we[j] = loader_insn_we;
+	    end else begin
+		core_insn_we[j] = 1'b0;
+	    end
+	    if(loader_data_addr[$clog2(CORES)+DMEM_DEPTH+2-1:DMEM_DEPTH+2] == j) begin
+		core_data_we[j] = loader_data_we;
+	    end else begin
+		core_data_we[j] = 1'b0;
+	    end
+
+	    core_data_oe[j] = 0;
+
+	    if(target_core == j) begin
+		core_snk_sop[j] = target_snk_sop;
+	    end else begin
+		core_snk_sop[j] = 0;
+	    end
+
+	    if(target_core == j) begin
+		core_snk_eop[j] = target_snk_sop;
+	    end else begin
+		core_snk_eop[j] = 0;
+	    end
+
+	    if(target_core == j) begin
+		core_snk_valid[j] = target_snk_sop;
+	    end else begin
+		core_snk_valid[j] = 0;
+	    end
+
+	    if(cur_run_id == j) begin
+		cur_core_halt = core_halt[j];
+	    end
+
+	end
+	core_snk_din = target_snk_data;
+    end
+
 
 endmodule // mspe
 
