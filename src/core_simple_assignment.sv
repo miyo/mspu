@@ -19,7 +19,8 @@ module core_simple_assignment#(parameter CORES=4)
     logic [$clog2(CORES)-1:0] next_core_id;
     logic [$clog2(CORES)-1:0] wait_core_id;
 
-    logic core_valid_i = (next_core_id != wait_core_id) | empty_flag;
+    logic core_valid_i;
+    assign core_valid_i = (next_core_id != wait_core_id) | empty_flag;
     assign core_valid = core_valid_i;
     assign core_id = next_core_id[$clog2(CORES)-1:0];
 

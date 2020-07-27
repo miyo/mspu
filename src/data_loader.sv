@@ -26,12 +26,15 @@ module data_loader#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
      output wire [64-1:0]  m0_address,
      output wire           m0_write,
      output wire           m0_read,
-     output wire [63:0]    m0_byteenable
+     output wire [63:0]    m0_byteenable,
+     output wire           m0_debugaccess
      );
 
     localparam INSN_NUM = 2**INSN_DEPTH;
     //localparam DMEM_NUM = 2**DMEM_DEPTH;
     localparam DMEM_NUM = 2**12; // 4K words
+
+    assign m0_debugaccess = 0;
 
     logic [$clog2(CORES)-1:0] target_core_reg;
 

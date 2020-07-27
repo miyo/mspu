@@ -53,7 +53,8 @@ module data_loader_tb();
 		  .m0_address(m0_address),
 		  .m0_write(m0_write),
 		  .m0_read(m0_read),
-		  .m0_byteenable(m0_byteenable)
+		  .m0_byteenable(m0_byteenable),
+		  .m0_debugaccess()
 		  );
 
     logic [31:0] state_counter = 0;

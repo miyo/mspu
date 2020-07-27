@@ -7,14 +7,14 @@ module datawidthconv_32_to_512
 
    input wire src_req,
 
-   output wire [31:0] data_addr,
-   output wire        data_oe,
+   output logic [31:0] data_addr,
+   output logic       data_oe,
    input wire [31:0]  data_q,
 
-   output wire src_sop,
-   output wire src_eop,
-   output wire src_valid,
-   output wire [511:0] src_q
+   output logic src_sop,
+   output logic src_eop,
+   output logic src_valid,
+   output logic [511:0] src_q
    );
 
     logic [4:0] mem_raddr, mem_waddr;
@@ -49,6 +49,7 @@ module datawidthconv_32_to_512
 	    src_valid <= 0;
 	    src_sop <= 0;
 	    src_eop <= 0;
+	    src_q <= 0;
 	end else begin
 	    src_req_d <= src_req;
 	    case(state_counter)
@@ -70,16 +71,17 @@ module datawidthconv_32_to_512
 		end
 		1 : begin
 		    state_counter <= state_counter + 1;
-		    data_addr <= data_addr + 1;
+		    data_addr <= data_addr + 4;
 		    data_oe <= 1;
 		end
 		2 : begin
-		    data_addr <= data_addr + 1;
+		    data_addr <= data_addr + 4;
 		    data_buf <= {data_buf[447:0], data_q};
 		    read_counter <= read_counter + 1;
 		    if(read_counter[3:0] == 15) begin
 			mem_waddr <= read_counter[8:4];
 			mem_we <= 1;
+			mem_din <= {data_buf[479:0], data_q};
 			if(read_counter == 511) begin
 			    state_counter <= state_counter + 1;
 			    mem_raddr <= mem_raddr + 1; // for next next
@@ -91,8 +93,10 @@ module datawidthconv_32_to_512
 		    end
 		end
 		3: begin
+		    data_oe <= 0;
 		    mem_we <= 0;
 		    src_q <= mem_dout;
+		    mem_raddr <= mem_raddr + 1;
 		    src_valid <= 1;
 		    write_counter <= write_counter + 1;
 		    if(write_counter == 0) begin

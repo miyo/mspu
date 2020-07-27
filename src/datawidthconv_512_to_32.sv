@@ -10,9 +10,9 @@ module datawidthconv_512_to_32
    input wire snk_valid,
    input wire [511:0] snk_din,
 
-   output wire [31:0] data_addr,
-   output wire [31:0] data_din,
-   output wire        data_we
+   output logic [31:0] data_addr,
+   output logic [31:0] data_din,
+   output logic        data_we
    );
 
     logic [4:0] mem_raddr, mem_waddr;
@@ -63,6 +63,8 @@ module datawidthconv_512_to_32
 	    snk_eop_flag_d <= 0;
 	    mem_raddr <= 0;
 	    data_we <= 0;
+	    data_addr <= 0;
+	    data_din <= 0;
 	    ifmem_write_counter <= 0;
 	end else begin
 	    snk_eop_flag_d <= snk_eop_flag;
@@ -98,9 +100,8 @@ module datawidthconv_512_to_32
 			end else begin
 			    state_counter <= 2;
 			end
-		    end else begin
-			ifmem_write_counter <= ifmem_write_counter + 1;
 		    end
+		    ifmem_write_counter <= ifmem_write_counter + 1;
 		end
 	    endcase // case (state_counter)
 	end

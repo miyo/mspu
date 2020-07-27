@@ -20,7 +20,8 @@ module core_simple_queue#(parameter CORES=4)
     logic [$clog2(CORES)-1:0] queued_id;
     logic [7:0] queued_num;
 
-    logic current_valid_i = queued_num > 0;
+    logic current_valid_i;
+    assign current_valid_i = queued_num > 0;
     assign current_valid = current_valid_i;
 
     assign current_id = queued_id - (queued_num - 1);

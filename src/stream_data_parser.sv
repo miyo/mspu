@@ -5,9 +5,9 @@ module stream_data_parser#(parameter CORES=4)
    input wire clk,
    input wire reset,
 
-   input wire [511:0] snk_data,
-   input wire snk_valid,
-   output wire snk_ready,
+   output logic recv_fifo_rdreq,
+   input wire [511:0] recv_fifo_q,
+   input wire [10:0] recv_fifo_rdusedw,
 
    input wire core_valid,
    input wire [$clog2(CORES)-1:0] core_id,
@@ -22,31 +22,6 @@ module stream_data_parser#(parameter CORES=4)
    output logic loader_kick,
    output logic [63:0] loader_memory_base_addr
    );
-
-    logic [511:0] recv_fifo_data;
-    logic recv_fifo_wrreq;
-    logic recv_fifo_rdreq;
-    logic [511:0] recv_fifo_q;
-    logic [10:0] recv_fifo_rdusedw;
-    logic [10:0] recv_fifo_wrusedw;
-    logic recv_fifo_rdempty;
-    logic recv_fifo_wrfull;
-
-    assign recv_fifo_data = snk_data;
-    assign recv_fifo_wrreq = snk_valid;
-    assign snk_ready = ~recv_fifo_wrfull;
-    
-    fifo_ft_512_64 recv_fifo(.data(recv_fifo_data),
-			     .wrreq(recv_fifo_wrreq),
-			     .rdreq(recv_fifo_rdreq),
-			     .wrclk(clk),
-			     .rdclk(clk),
-			     .q(recv_fifo_q), 
-			     .rdusedw(recv_fifo_rdusedw),
-			     .wrusedw(recv_fifo_wrusedw),
-			     .rdempty(recv_fifo_rdempty),
-			     .wrfull(recv_fifo_wrfull)
-			     );
 
     logic [31:0] data_id;
 
@@ -66,20 +41,21 @@ module stream_data_parser#(parameter CORES=4)
 	end else begin
 	    case(state_counter)
 		0: begin // wait for streaming data
-		    if(core_valid == 1 && recv_fifo_rdusedw > recv_fifo_q[31:0]) begin // recv_fifo_q[31:0] = data_length
+		    if(core_valid == 1 && recv_fifo_rdusedw >= recv_fifo_q[511:480] && recv_fifo_rdusedw > 0) begin // recv_fifo_q[511:480] = data_length
 			// read and send streaming data
 			recv_fifo_rdreq <= 1;
-			if(recv_fifo_q[31:0] > 1) begin
-			    read_counter <= recv_fifo_q[31:0] - 1;
+			if(recv_fifo_q[511:480] > 1) begin
+			    read_counter <= recv_fifo_q[511:480] - 1;
 			    state_counter <= state_counter + 1;
+			    target_snk_eop <= 0;
 			end else begin
 			    read_counter <= 0;
-			    target_snk_eop <= 0;
+			    target_snk_eop <= 1;
 			    state_counter <= state_counter + 2;
 			end
 			target_snk_sop <= 1;
 			target_snk_valid <= 1;
-			data_id <= recv_fifo_q[63:32];
+			data_id <= recv_fifo_q[479:448];
 			target_snk_data <= recv_fifo_q;
 			target_core <= core_id;
 			target_core_valid <= 1;
@@ -116,6 +92,7 @@ module stream_data_parser#(parameter CORES=4)
 		    loader_kick <= 1;
 		    loader_memory_base_addr <= {17'b0, data_id, 15'b0};
 		    target_core_valid <= 0;
+		    state_counter <= 0;
 		end
 		default: begin
 		    state_counter <= 0;
