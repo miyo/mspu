@@ -208,11 +208,16 @@ module data_memory#(parameter DEPTH = 12)
 
     // Peripheral
     always_ff @(posedge clk) begin
-	if(we == 1 && addr == UART_ADDR) begin
-	    uart_dout <= wd1;
-	    uart_we <= 1'b1;
+	if(reset == 1) begin
+	    uart_dout <= 0;
+	    uart_we <= 0;
 	end else begin
-	    uart_we <= 1'b0;
+	    if(we == 1 && addr == UART_ADDR) begin
+		uart_dout <= wd1;
+		uart_we <= 1'b1;
+	    end else begin
+		uart_we <= 1'b0;
+	    end
 	end
     end
 

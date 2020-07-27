@@ -76,98 +76,103 @@ module executer (
     assign shift_ready_pre = shift_ready_pre_i || shift_nop;
 
     always_ff @(posedge clk) begin
-    	run_out <= run;
-	case(state)
-	    0: begin
-		if(run && !stall) begin
-    		    mem_to_reg_out <= mem_to_reg_in;
-    		    bytes_out <= bytes_in;
-    		    wdata_src_out <= wdata_src_in;
-    		    wdata_out <= wdata_in;
-    		    we_out <= we_in;
-    		    re_out <= re_in;
-    		    rd_out <= rd_in;
-    		    reg_we_out <= reg_we_in;
-		    if(shift_op != SH_NOP) begin
-			if(alu_b == 0) begin
-			    shift_nop <= 1;
+	if(reset == 1) begin
+	    state <= 0;
+	    alu_result <= 0;
+	end else begin
+    	    run_out <= run;
+	    case(state)
+		0: begin
+		    if(run && !stall) begin
+    			mem_to_reg_out <= mem_to_reg_in;
+    			bytes_out <= bytes_in;
+    			wdata_src_out <= wdata_src_in;
+    			wdata_out <= wdata_in;
+    			we_out <= we_in;
+    			re_out <= re_in;
+    			rd_out <= rd_in;
+    			reg_we_out <= reg_we_in;
+			if(shift_op != SH_NOP) begin
+			    if(alu_b == 0) begin
+				shift_nop <= 1;
+			    end else begin
+				shift_kick <= 1;
+				shift_unsigned_flag <= unsigned_flag;
+				shift_lshift_flag <= (shift_op == SH_SLL) ? 1'b1 : 1'b0;
+				shift_nop <= 0;
+			    end
+			    state <= state + 3;
+    			    reg_we_out <= 1'b0;
+			    shift_a <= alu_a;
+			    shift_b <= alu_b;
+			end else if(div_op != DIV_NOP) begin
+    			    reg_we_out <= 1'b0;
+			    div_kick <= 1;
+			    div_a <= alu_a;
+			    div_b <= alu_b;
+			    div_unsigned_flag <= unsigned_flag;
+			    state <= state + 2;
+			end else if(mul_op != MUL_NOP) begin
+			    alu_result <= mul_r;
+			    alu_unknown_op <= mul_unknown_op_i;
 			end else begin
-			    shift_kick <= 1;
-			    shift_unsigned_flag <= unsigned_flag;
-			    shift_lshift_flag <= (shift_op == SH_SLL) ? 1'b1 : 1'b0;
-			    shift_nop <= 0;
+    			    alu_result <= alu_r;
+			    alu_unknown_op <= alu_unknown_op_i;
 			end
-			state <= state + 3;
-    			reg_we_out <= 1'b0;
-			shift_a <= alu_a;
-			shift_b <= alu_b;
-		    end else if(div_op != DIV_NOP) begin
-    			reg_we_out <= 1'b0;
-			div_kick <= 1;
-			div_a <= alu_a;
-			div_b <= alu_b;
-			div_unsigned_flag <= unsigned_flag;
-			state <= state + 2;
-		    end else if(mul_op != MUL_NOP) begin
-			alu_result <= mul_r;
-			alu_unknown_op <= mul_unknown_op_i;
+			addr_out <= addr_out_i;
+			addr_out_en <= addr_out_en_i;
+			unsigned_flag_out <= unsigned_flag;
+			if(addr_out_en_i == 1) begin
+			    state <= state + 1;
+			    stall_counter <= 2;
+			end
 		    end else begin
-    			alu_result <= alu_r;
-			alu_unknown_op <= alu_unknown_op_i;
 		    end
-		    addr_out <= addr_out_i;
-		    addr_out_en <= addr_out_en_i;
-		    unsigned_flag_out <= unsigned_flag;
-		    if(addr_out_en_i == 1) begin
-			state <= state + 1;
-			stall_counter <= 2;
+		end
+		1: begin
+		    addr_out_en <= 1'b0;
+		    if(stall_counter == 0) begin
+			state <= 0;
+		    end else begin
+			stall_counter <= stall_counter - 1;
 		    end
-		end else begin
 		end
-	    end
-	    1: begin
-		addr_out_en <= 1'b0;
-		if(stall_counter == 0) begin
-		    state <= 0;
-		end else begin
-		    stall_counter <= stall_counter - 1;
+		2: begin
+		    div_kick <= 0;
+		    shift_nop <= 0;
+		    if(div_kick == 0 && div_ready == 1) begin
+			if(div_op == DIV_DIV) begin
+    			    reg_we_out <= 1'b1;
+			    alu_result <= div_quotient;
+			    alu_unknown_op <= 0;
+			end else if(div_op == DIV_REM) begin
+    			    reg_we_out <= 1'b1;
+			    alu_result <= div_remainder;
+			    alu_unknown_op <= 0;
+			end else begin
+			    alu_unknown_op <= 1;
+			end
+			state <= 0;
+		    end
 		end
-	    end
-	    2: begin
-		div_kick <= 0;
-		shift_nop <= 0;
-		if(div_kick == 0 && div_ready == 1) begin
-		    if(div_op == DIV_DIV) begin
+		3: begin
+		    shift_kick <= 0;
+		    if(shift_kick == 0 && shift_ready == 1) begin
     			reg_we_out <= 1'b1;
-			alu_result <= div_quotient;
+			if(shift_nop) begin
+			    alu_result <= shift_a;
+			end else begin
+			    alu_result <= shift_q;
+			end
 			alu_unknown_op <= 0;
-		    end else if(div_op == DIV_REM) begin
-    			reg_we_out <= 1'b1;
-			alu_result <= div_remainder;
-			alu_unknown_op <= 0;
-		    end else begin
-			alu_unknown_op <= 1;
+			state <= 0;
 		    end
+		end
+		default: begin
 		    state <= 0;
 		end
-	    end
-	    3: begin
-		shift_kick <= 0;
-		if(shift_kick == 0 && shift_ready == 1) begin
-    		    reg_we_out <= 1'b1;
-		    if(shift_nop) begin
-			alu_result <= shift_a;
-		    end else begin
-			alu_result <= shift_q;
-		    end
-		    alu_unknown_op <= 0;
-		    state <= 0;
-		end
-	    end
-	    default: begin
-		state <= 0;
-	    end
-	endcase
+	    endcase // case (state)
+	end // else: !if(reset == 1)
     end
 
     /* verilator lint_off PINCONNECTEMPTY */
