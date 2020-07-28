@@ -132,7 +132,7 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 	   .src_counter(send_fifo_counter)
 	   );
 
-    fifo_ft_512_64 fifo_ft_512_64_recv(
+    fifo_ft_512_256 fifo_ft_512_256_recv(
 				       .data(recv_fifo_din),
 				       .wrreq(recv_fifo_wrreq),
 				       .rdreq(recv_fifo_rdreq),
@@ -145,7 +145,7 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 				       .almost_full(recv_fifo_full)
 				       );
     
-    fifo_ft_512_64 fifo_ft_512_64_send(
+    fifo_ft_512_256 fifo_ft_512_256_send(
 				       .data(src_data),
 				       .wrreq(src_valid),
 				       .rdreq(send_fifo_rdreq),
