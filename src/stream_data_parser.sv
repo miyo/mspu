@@ -41,7 +41,8 @@ module stream_data_parser#(parameter CORES=4)
 	end else begin
 	    case(state_counter)
 		0: begin // wait for streaming data
-		    if(core_valid == 1 && recv_fifo_rdusedw >= recv_fifo_q[511:480] && recv_fifo_rdusedw > 0) begin // recv_fifo_q[511:480] = data_length
+		    //if(core_valid == 1 && recv_fifo_rdusedw >= recv_fifo_q[511:480] && recv_fifo_rdusedw > 0) begin // recv_fifo_q[511:480] = data_length
+		    if(core_valid == 1 && recv_fifo_rdusedw >= recv_fifo_q[511:480] && recv_fifo_q[511:480] > 0) begin // recv_fifo_q[511:480] = data_length
 			// read and send streaming data
 			recv_fifo_rdreq <= 1;
 			if(recv_fifo_q[511:480] > 1) begin

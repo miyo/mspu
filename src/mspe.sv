@@ -39,12 +39,17 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
      output wire recv_fifo_rdreq,
      input wire [511:0] recv_fifo_q,
      input wire [10:0] recv_fifo_rdusedw,
+     output logic recv_fifo_kick,
+     output logic recv_fifo_clear,
+     input wire [63:0] recv_fifo_counter,
      
      output logic [511:0] src_data,
      output logic src_valid,
      output logic src_sop,
      output logic src_eop,
-     input logic src_ready
+     input logic src_ready,
+     output logic src_clear,
+     input wire [63:0] src_counter
      );
 
     localparam VERSION = 32'h3434_0002;
@@ -75,6 +80,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
     logic csr_write_kick_d;
     logic csr_read_kick;
     logic csr_read_kick_d;
+    logic all_core_reset;
 
     always_ff @(posedge clk) begin
 	if (reset == 1) begin
@@ -89,6 +95,10 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 	    csr_read_kick       <= 0;
 	    csr_write_kick_d    <= 0;
 	    csr_read_kick_d     <= 0;
+	    recv_fifo_kick      <= 0;
+	    recv_fifo_clear     <= 0;
+	    src_clear           <= 0;
+	    all_core_reset <= 0;
 	end else begin
 	    csr_write_kick_d <= csr_write_kick;
 	    if(csr_write_kick == 1 && csr_write_kick_d == 0)
@@ -104,9 +114,15 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 
 	    if(csr_write == 1)begin
 		case (csr_address)
+		    5'd3:begin
+			all_core_reset  <= csr_writedata[3];
+			recv_fifo_kick  <= csr_writedata[2];
+			recv_fifo_clear <= csr_writedata[1];
+			src_clear       <= csr_writedata[0];
+		    end
 		    5'd13: begin
+			csr_read_kick  <= csr_writedata[1];
 			csr_write_kick <= csr_writedata[0];
-			csr_read_kick <= csr_writedata[1];
 		    end
 		    5'd14: csr_address_reg[63:32] <= csr_writedata;
 		    5'd15: csr_address_reg[31: 0] <= csr_writedata;
@@ -158,6 +174,18 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 		    csr_readdata[31:CORES] <= 0;
 		    csr_readdata[CORES-1:0] <= core_status;
 		end
+		5'd3: begin
+		    csr_readdata[31:4] <= 0;
+		    csr_readdata[3] <= all_core_reset;
+		    csr_readdata[2] <= recv_fifo_kick;
+		    csr_readdata[1] <= recv_fifo_clear;
+		    csr_readdata[0] <= src_clear;
+		end
+		5'd4: csr_readdata <= recv_fifo_counter[63:32];
+		5'd5: csr_readdata <= recv_fifo_counter[31:0];
+		5'd6: csr_readdata <= src_counter[63:32];
+		5'd7: csr_readdata <= src_counter[31:0];
+
 		5'd16: csr_readdata <= m0_readdata_reg[511:480];
 		5'd17: csr_readdata <= m0_readdata_reg[479:448];
 		5'd18: csr_readdata <= m0_readdata_reg[447:416];
@@ -258,7 +286,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 
 `ifdef CORE_OoO_ASSIGNMENT
     core_manager(.CORES(4)) core_manager_i(.clk(clk),
-					   .reset(reset),
+					   .reset(reset | all_core_reset),
 					   .init_busy(core_manager_init_busy),
 					   .core_valid(core_valid),
 					   .core_id(core_id),
@@ -271,7 +299,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
     core_simple_assignment#(.CORES(4))
     core_simple_assignment_i(
 			     .clk(clk),
-			     .reset(reset),
+			     .reset(reset | all_core_reset),
 			     .core_valid(core_valid),
 			     .core_id(core_id),
 			     .core_request(core_request),
@@ -287,7 +315,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 
     data_loader#(.CORES(CORES), .INSN_DEPTH(INSN_DEPTH), .DMEM_DEPTH(DMEM_DEPTH))
     data_loader_i(.clk(clk),
-		  .reset(reset),
+		  .reset(reset | all_core_reset),
 		  .kick(loader_kick),
 		  .busy(loader_busy),
 		  .memory_base_addr(loader_memory_base_addr),
@@ -322,7 +350,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
     stream_data_parser#(.CORES(CORES))
     stream_data_parser_i(
 			 .clk(clk),
-			 .reset(reset),
+			 .reset(reset | all_core_reset),
 
 			 .recv_fifo_rdreq(recv_fifo_rdreq),
 			 .recv_fifo_q(recv_fifo_q),
@@ -359,7 +387,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 
     core_task_queue#(.CORES(4)) loader_task_queue(
 						  .clk(clk),
-						  .reset(reset),
+						  .reset(reset | all_core_reset),
 						  .enqueue_id(target_core),
 						  .enqueue_valid(enqueue_loader_kick),
 						  .current_id(cur_loader_id),
@@ -369,7 +397,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 
     core_task_queue#(.CORES(4)) run_task_queue(
 					       .clk(clk),
-					       .reset(reset),
+					       .reset(reset | all_core_reset),
 					       .enqueue_id(run_enqueue_id),
 					       .enqueue_valid(run_enqueue_valid),
 					       .current_id(cur_run_id),
@@ -380,7 +408,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 
     core_simple_queue#(.CORES(4)) loader_task_queue(
 						    .clk(clk),
-						    .reset(reset),
+						    .reset(reset | all_core_reset),
 						    .enqueue_id(target_core),
 						    .enqueue_valid(enqueue_loader_kick),
 						    .current_id(cur_loader_id),
@@ -389,7 +417,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 						    );
     core_simple_queue#(.CORES(4)) run_task_queue(
 						 .clk(clk),
-						 .reset(reset),
+						 .reset(reset | all_core_reset),
 						 .enqueue_id(run_enqueue_id),
 						 .enqueue_valid(run_enqueue_valid),
 						 .current_id(cur_run_id),
@@ -401,7 +429,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 
     logic [63:0] cur_loader_memory_base_addr;
     always_ff @(posedge clk) begin
-	if(reset == 1) begin
+	if(reset | all_core_reset) begin
 	    loader_kick <= 0;
 	end else begin
 	    loader_busy_d1 <= loader_busy;
@@ -419,7 +447,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 
     logic [63:0] memory_base_addr_pool[CORES-1:0];
     always_ff @(posedge clk) begin
-	if(reset == 1) begin
+	if(reset | all_core_reset) begin
 	end else begin
 	    if(enqueue_loader_kick) begin
 		memory_base_addr_pool[target_core] <= enqueue_loader_memory_base_addr;
@@ -438,7 +466,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
     logic [511:0] target_src_q;
     logic cur_loader_consume_d;
     always_ff @(posedge clk) begin
-	if(reset == 1) begin
+	if(reset | all_core_reset) begin
 	    loader_busy_d <= 0;
 	    cur_loader_consume <= 0;
 	    run_enqueue_valid <= 0;
@@ -478,7 +506,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
     end
 
     always_ff @(posedge clk) begin
-	if(reset == 1) begin
+	if(reset | all_core_reset) begin
 	    core_reset <= -1;
 	end else begin
 	    if(cur_run_consume == 1)
