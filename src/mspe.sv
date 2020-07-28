@@ -473,7 +473,6 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 	    run_enqueue_id <= 0;
 	    cur_core_halt_d <= 0;
 	    cur_run_consume <= 0;
-	    cur_run_id <= 0;
 	    core_release <= 0;
 	    target_src_req <= 0;
 	    target_src_eop_d <= 0;
