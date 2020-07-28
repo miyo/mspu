@@ -47,7 +47,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
      output logic src_valid,
      output logic src_sop,
      output logic src_eop,
-     input logic src_ready,
+     input wire src_ready,
      output logic src_clear,
      input wire [63:0] src_counter
      );
