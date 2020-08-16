@@ -60,6 +60,7 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
     logic recv_fifo_rdreq;
     logic [511:0] recv_fifo_q;
     logic [10:0] recv_fifo_rdusedw;
+    logic recv_fifo_empty;
      
     logic [511:0] src_data;
     logic src_valid;
@@ -122,19 +123,22 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
     fifo_ft_512_256 fifo_ft_512_256_recv(
 					 .data(recv_fifo_din),
 					 .wrreq(recv_fifo_wrreq),
-					 .rdreq(recv_fifo_rdreq),
+					 //.rdreq(recv_fifo_rdreq),
+					 .rdreq((recv_fifo_rdusedw > 0) && (recv_fifo_empty == 0)),
 					 .clock(clk),
 					 .sclr(recv_fifo_clear | reset),
 					 .q(recv_fifo_q), 
 					 .usedw(recv_fifo_rdusedw),
-					 .empty(),
+					 .empty(recv_fifo_empty),
 					 .full(),
 					 .almost_full(recv_fifo_full)
 					 );
     
     fifo_ft_512_256 fifo_ft_512_256_send(
-					 .data(src_data),
-					 .wrreq(src_valid),
+					 //.data(src_data),
+					 //.wrreq(src_valid),
+					 .data(recv_fifo_q),
+					 .wrreq((recv_fifo_rdusedw) > 0 && (recv_fifo_empty == 0)),
 					 .rdreq(send_fifo_rdreq),
 					 .clock(clk),
 					 .sclr(send_fifo_clear | reset),
@@ -155,19 +159,23 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 	    m2_address <= 0;
 	    m2_write <= 0;
 	    m2_read <= 0;
-	    m2_byteenable <= 0;
+	    m2_byteenable <= 64'hFFFFFFFF_FFFFFFFF;
 	    recv_fifo_counter <= 0;
 	end else begin
-	    if(recv_fifo_kick == 1 && recv_fifo_counter < data_count) begin
-		if(recv_fifo_full == 0) begin
-		    m2_read <= 1;
-		    m2_address <= src_addr_offset + {recv_fifo_counter[57:0], 6'b000000}; // byte-addressable
-		    recv_fifo_counter <= recv_fifo_counter + 1;
+	    if(m2_waitrequest == 0) begin
+		if(recv_fifo_kick == 1 && recv_fifo_counter < data_count) begin
+		    if(recv_fifo_full == 0) begin
+			m2_read <= 1;
+			m2_address <= src_addr_offset + {recv_fifo_counter[57:0], 6'b000000}; // byte-addressable
+			recv_fifo_counter <= recv_fifo_counter + 1;
+		    end else begin
+			m2_read <= 0;
+		    end
 		end else begin
 		    m2_read <= 0;
 		end
 	    end else begin
-		m2_read <= 0;
+		// signal should be kept
 	    end
 	    recv_fifo_wrreq <= m2_readdatavalid;
 	    recv_fifo_din <= m2_readdata;
@@ -187,19 +195,26 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 	    m3_byteenable <= 64'hFFFFFFFF_FFFFFFFF;
 	    send_fifo_counter <= 0;
 	end else begin
-	    if(send_fifo_usedw > 0) begin
-		m3_address <= dst_addr_offset + {send_fifo_counter[57:0], 6'b000000}; // byte-addressable
-		m3_write <= 1;
-		m3_writedata <= send_fifo_q;
+
+	    if(m3_waitrequest == 0) begin
+		if((send_fifo_usedw > 0) && (send_fifo_empty == 0)) begin
+		    m3_address <= dst_addr_offset + {send_fifo_counter[57:0], 6'b000000}; // byte-addressable
+		    m3_write <= 1;
+		    m3_writedata <= send_fifo_q;
+		end else begin
+		    m3_write <= 0;
+		end
 	    end else begin
-		m3_write <= 0;
+		// signal should be kept
 	    end
-	    if(m3_waitrequest | m3_write) begin
+
+	    if((m3_waitrequest == 0) && (m3_write == 1)) begin // when accepted
 		send_fifo_rdreq <= 1;
 		send_fifo_counter <= send_fifo_counter + 1;
 	    end else begin
 		send_fifo_rdreq <= 0;
 	    end
+
 	end
     end
 
