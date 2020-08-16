@@ -162,7 +162,10 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 	    m2_byteenable <= 64'hFFFFFFFF_FFFFFFFF;
 	    recv_fifo_counter <= 0;
 	end else begin
-	    if(m2_waitrequest == 0) begin
+
+	    if((m2_waitrequest == 1) && (m2_read == 1)) begin
+		// signal should be kept
+	    end else begin
 		if(recv_fifo_kick == 1 && recv_fifo_counter < data_count) begin
 		    if(recv_fifo_full == 0) begin
 			m2_read <= 1;
@@ -174,9 +177,8 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 		end else begin
 		    m2_read <= 0;
 		end
-	    end else begin
-		// signal should be kept
 	    end
+
 	    recv_fifo_wrreq <= m2_readdatavalid;
 	    recv_fifo_din <= m2_readdata;
 	end
@@ -196,7 +198,9 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 	    send_fifo_counter <= 0;
 	end else begin
 
-	    if(m3_waitrequest == 0) begin
+	    if((m3_waitrequest == 1) && (m3_write == 1)) begin
+		// signal should be kept
+	    end else begin
 		if((send_fifo_usedw > 0) && (send_fifo_empty == 0)) begin
 		    m3_address <= dst_addr_offset + {send_fifo_counter[57:0], 6'b000000}; // byte-addressable
 		    m3_write <= 1;
@@ -204,8 +208,6 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 		end else begin
 		    m3_write <= 0;
 		end
-	    end else begin
-		// signal should be kept
 	    end
 
 	    if((m3_waitrequest == 0) && (m3_write == 1)) begin // when accepted
