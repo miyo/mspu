@@ -8,6 +8,7 @@ module stream_data_parser_tb#(parameter CORES=4);
     logic recv_fifo_rdreq;
     logic [511:0] recv_fifo_q;
     logic [10:0] recv_fifo_rdusedw;
+    logic recv_fifo_valid;
 
     logic core_valid;
     logic [$clog2(CORES)-1:0] core_id;
@@ -42,6 +43,7 @@ module stream_data_parser_tb#(parameter CORES=4);
 		reset <= 1;
 		recv_fifo_q <= 0;
 		recv_fifo_rdusedw <= 0;
+		recv_fifo_valid <= 0;
 		core_valid <= 0;
 		core_id <= 0;
 	    end
@@ -59,23 +61,26 @@ module stream_data_parser_tb#(parameter CORES=4);
 
 	    11: begin
 		counter <= counter + 1;
-		recv_fifo_q[511:480] <= 4;
-		recv_fifo_q[479:448] <= 3;
+		recv_fifo_q[31:0] <= 4; // data length
+		recv_fifo_q[63:32] <= 3; // id
 		recv_fifo_rdusedw <= 4;
+		recv_fifo_valid <= 1;
 	    end
 
 	    21: begin
 		counter <= counter + 1;
-		recv_fifo_q[511:480] <= 1;
-		recv_fifo_q[479:448] <= 0;
+		recv_fifo_q[31:0] <= 1; // data length
+		recv_fifo_q[63:32] <= 0; // id
 		recv_fifo_rdusedw <= 1;
+		recv_fifo_valid <= 1;
 	    end
 	    
 	    31: begin
 		counter <= counter + 1;
-		recv_fifo_q[511:480] <= 6;
-		recv_fifo_q[479:448] <= 2;
+		recv_fifo_q[31:0] <= 6; // data length
+		recv_fifo_q[63:32] <= 2; // id
 		recv_fifo_rdusedw <= 6;
+		recv_fifo_valid <= 1;
 	    end
 
 	    default: begin
@@ -101,6 +106,7 @@ module stream_data_parser_tb#(parameter CORES=4);
 			 .recv_fifo_rdreq(recv_fifo_rdreq),
 			 .recv_fifo_q(recv_fifo_q),
 			 .recv_fifo_rdusedw(recv_fifo_rdusedw),
+			 .recv_fifo_valid(recv_fifo_valid),
 
 			 .core_valid(core_valid),
 			 .core_id(core_id),

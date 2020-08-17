@@ -8,6 +8,7 @@ module stream_data_parser#(parameter CORES=4)
    output logic recv_fifo_rdreq,
    input wire [511:0] recv_fifo_q,
    input wire [10:0] recv_fifo_rdusedw,
+   input wire recv_fifo_valid,
 
    input wire core_valid,
    input wire [$clog2(CORES)-1:0] core_id,
@@ -41,12 +42,12 @@ module stream_data_parser#(parameter CORES=4)
 	end else begin
 	    case(state_counter)
 		0: begin // wait for streaming data
-		    //if(core_valid == 1 && recv_fifo_rdusedw >= recv_fifo_q[511:480] && recv_fifo_rdusedw > 0) begin // recv_fifo_q[511:480] = data_length
-		    if(core_valid == 1 && recv_fifo_rdusedw >= recv_fifo_q[511:480] && recv_fifo_q[511:480] > 0) begin // recv_fifo_q[511:480] = data_length
+		    // recv_fifo_q[31:0] = data_length
+		    if(core_valid == 1 && recv_fifo_valid == 1 && recv_fifo_rdusedw >= recv_fifo_q[31:0] && recv_fifo_q[31:0] > 0) begin
 			// read and send streaming data
 			recv_fifo_rdreq <= 1;
-			if(recv_fifo_q[511:480] > 1) begin
-			    read_counter <= recv_fifo_q[511:480] - 1;
+			if(recv_fifo_q[31:0] > 1) begin
+			    read_counter <= recv_fifo_q[31:0] - 1;
 			    state_counter <= state_counter + 1;
 			    target_snk_eop <= 0;
 			end else begin
@@ -56,7 +57,7 @@ module stream_data_parser#(parameter CORES=4)
 			end
 			target_snk_sop <= 1;
 			target_snk_valid <= 1;
-			data_id <= recv_fifo_q[479:448];
+			data_id <= recv_fifo_q[63:32];
 			target_snk_data <= recv_fifo_q;
 			target_core <= core_id;
 			target_core_valid <= 1;

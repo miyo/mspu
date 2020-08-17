@@ -20,6 +20,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
      output wire recv_fifo_rdreq,
      input wire [511:0] recv_fifo_q,
      input wire [10:0] recv_fifo_rdusedw,
+     input wire recv_fifo_valid,
      
      output logic [511:0] src_data,
      output logic src_valid,
@@ -182,6 +183,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 			 .recv_fifo_rdreq(recv_fifo_rdreq),
 			 .recv_fifo_q(recv_fifo_q),
 			 .recv_fifo_rdusedw(recv_fifo_rdusedw),
+			 .recv_fifo_valid(recv_fifo_valid),
 
 			 .core_valid(core_valid),
 			 .core_id(core_id),

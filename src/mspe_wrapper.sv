@@ -74,6 +74,7 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
     logic recv_fifo_kick;
     logic recv_fifo_clear;
     logic [63:0] recv_fifo_counter;
+    logic recv_fifo_valid;
 
     logic send_fifo_rdreq;
     logic send_fifo_clear;
@@ -81,6 +82,10 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
     logic [10:0] send_fifo_usedw;
     logic send_fifo_empty;
     logic [63:0] send_fifo_counter;
+    logic send_fifo_wrreq;
+    logic [511:0] send_fifo_data;
+    logic send_fifo_valid;
+    logic send_fifo_almost_empty;
 
     logic [CORES-1:0] core_status;
     logic all_core_reset;
@@ -106,9 +111,11 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 	   .m0_byteenable(m1_byteenable),
 	   .m0_debugaccess(),
 	   
-	   .recv_fifo_rdreq(recv_fifo_rdreq),
+	   //.recv_fifo_rdreq(recv_fifo_rdreq),
+	   .recv_fifo_rdreq(),
 	   .recv_fifo_q(recv_fifo_q),
 	   .recv_fifo_rdusedw(recv_fifo_rdusedw),
+	   .recv_fifo_valid(recv_fifo_valid),
 	   
 	   .src_data(src_data),
 	   .src_valid(src_valid),
@@ -123,8 +130,7 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
     fifo_ft_512_256 fifo_ft_512_256_recv(
 					 .data(recv_fifo_din),
 					 .wrreq(recv_fifo_wrreq),
-					 //.rdreq(recv_fifo_rdreq),
-					 .rdreq((recv_fifo_rdusedw > 0) && (recv_fifo_empty == 0)),
+					 .rdreq(recv_fifo_rdreq),
 					 .clock(clk),
 					 .sclr(recv_fifo_clear | reset),
 					 .q(recv_fifo_q), 
@@ -133,12 +139,13 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 					 .full(),
 					 .almost_full(recv_fifo_full)
 					 );
+    assign recv_fifo_valid = (recv_fifo_rdusedw > 0) && (recv_fifo_empty == 0);
+
+    assign recv_fifo_rdreq = recv_fifo_valid;
     
     fifo_ft_512_256 fifo_ft_512_256_send(
-					 //.data(src_data),
-					 //.wrreq(src_valid),
-					 .data(recv_fifo_q),
-					 .wrreq((recv_fifo_rdusedw) > 0 && (recv_fifo_empty == 0)),
+					 .data(send_fifo_data),
+					 .wrreq(send_fifo_wrreq),
 					 .rdreq(send_fifo_rdreq),
 					 .clock(clk),
 					 .sclr(send_fifo_clear | reset),
@@ -148,6 +155,14 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 					 .full(),
 					 .almost_full(src_ready)
 					 );
+    assign send_fifo_valid = (send_fifo_usedw > 0) && (send_fifo_empty == 0);
+    assign send_fifo_almost_empty = (send_fifo_usedw == 1) && (send_fifo_wrreq == 0) && (send_fifo_rdreq == 1);
+
+    //assign send_fifo_wrreq = src_valid;
+    //assign send_fifo_data = src_data;
+    assign send_fifo_wrreq = recv_fifo_valid;
+    assign send_fifo_data = recv_fifo_q;
+
 
     ////////////////////////////////////////////////////////////////////////
     // DRAM -> FIFO
@@ -187,43 +202,49 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
     ////////////////////////////////////////////////////////////////////////
     // FIFO->DRAM
     ////////////////////////////////////////////////////////////////////////
+    logic [511:0] send_fifo_q_d;
+    logic m3_waitrequest_d;
     always_ff @(posedge clk) begin
 	if(reset | send_fifo_clear) begin
 	    m3_burstcount <= 1;
-	    m3_writedata <= 0;
 	    m3_address <= 0;
 	    m3_write <= 0;
 	    m3_read <= 0;
 	    m3_byteenable <= 64'hFFFFFFFF_FFFFFFFF;
 	    send_fifo_counter <= 0;
+	    m3_waitrequest_d <= 1;
 	end else begin
-
+	    m3_waitrequest_d <= m3_waitrequest;
 	    if((m3_waitrequest == 1) && (m3_write == 1)) begin
 		// signal should be kept
+		send_fifo_rdreq <= 0;
 	    end else begin
-		if((send_fifo_usedw > 0) && (send_fifo_empty == 0)) begin
+		if((send_fifo_valid == 1) && (send_fifo_almost_empty == 0)) begin
 		    m3_address <= dst_addr_offset + {send_fifo_counter[57:0], 6'b000000}; // byte-addressable
 		    m3_write <= 1;
-		    m3_writedata <= send_fifo_q;
+		    send_fifo_rdreq <= 1;
+		    send_fifo_counter <= send_fifo_counter + 1;
+		    send_fifo_q_d <= send_fifo_q;
 		end else begin
 		    m3_write <= 0;
+		    send_fifo_rdreq <= 0;
 		end
 	    end
-
-	    if((m3_waitrequest == 0) && (m3_write == 1)) begin // when accepted
-		send_fifo_rdreq <= 1;
-		send_fifo_counter <= send_fifo_counter + 1;
-	    end else begin
-		send_fifo_rdreq <= 0;
-	    end
-
 	end
     end
+    always_comb begin
+	if(m3_waitrequest_d == 1) begin
+	    m3_writedata = send_fifo_q_d;
+	end else begin
+	    m3_writedata = send_fifo_q;
+	end
+    end
+    ////////////////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////
     // Ctrl/Status interface
     ////////////////////////////////////////////////////////////////////////
-    localparam VERSION = 32'h3434_0003;
+    localparam VERSION = 32'h3434_0004;
 
     logic [512-1:0] m0_readdata_reg;
 
