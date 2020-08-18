@@ -121,7 +121,9 @@ module data_loader#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 		    insn_we_reg <= 0;
 		end
 		2: begin // wait for readdatavalid
-		    m0_read_reg <= 0;
+		    if(m0_waitrequest==0) begin
+			m0_read_reg <= 0;
+		    end
 		    if(m0_readdatavalid == 1) begin
 			m0_readdata_reg <= m0_readdata;
 			state_counter <= state_counter + 1;
@@ -151,7 +153,9 @@ module data_loader#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 		    insn_we_reg <= 0;
 		end
 		5: begin // wait for readdatavalid
-		    m0_read_reg <= 0;
+		    if(m0_waitrequest == 0) begin
+			m0_read_reg <= 0;
+		    end
 		    if(m0_readdatavalid == 1) begin
 			m0_readdata_reg <= m0_readdata;
 			state_counter <= state_counter + 1;

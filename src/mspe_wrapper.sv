@@ -111,8 +111,7 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 	   .m0_byteenable(m1_byteenable),
 	   .m0_debugaccess(),
 	   
-	   //.recv_fifo_rdreq(recv_fifo_rdreq),
-	   .recv_fifo_rdreq(),
+	   .recv_fifo_rdreq(recv_fifo_rdreq),
 	   .recv_fifo_q(recv_fifo_q),
 	   .recv_fifo_rdusedw(recv_fifo_rdusedw),
 	   .recv_fifo_valid(recv_fifo_valid),
@@ -126,6 +125,16 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 	   .core_status(core_status),
 	   .all_core_reset(all_core_reset)
 	   );
+    assign send_fifo_wrreq = src_valid;
+    assign send_fifo_data = src_data;
+
+    /////////////////////////////////////////////////////////////////
+    // for pass-through
+    /////////////////////////////////////////////////////////////////
+    //assign recv_fifo_rdreq = recv_fifo_valid;
+    //assign send_fifo_wrreq = recv_fifo_valid;
+    //assign send_fifo_data = recv_fifo_q;
+    /////////////////////////////////////////////////////////////////
 
     fifo_ft_512_256 fifo_ft_512_256_recv(
 					 .data(recv_fifo_din),
@@ -140,8 +149,6 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 					 .almost_full(recv_fifo_full)
 					 );
     assign recv_fifo_valid = (recv_fifo_rdusedw > 0) && (recv_fifo_empty == 0);
-
-    assign recv_fifo_rdreq = recv_fifo_valid;
     
     fifo_ft_512_256 fifo_ft_512_256_send(
 					 .data(send_fifo_data),
@@ -157,12 +164,6 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 					 );
     assign send_fifo_valid = (send_fifo_usedw > 0) && (send_fifo_empty == 0);
     assign send_fifo_almost_empty = (send_fifo_usedw == 1) && (send_fifo_wrreq == 0) && (send_fifo_rdreq == 1);
-
-    //assign send_fifo_wrreq = src_valid;
-    //assign send_fifo_data = src_data;
-    assign send_fifo_wrreq = recv_fifo_valid;
-    assign send_fifo_data = recv_fifo_q;
-
 
     ////////////////////////////////////////////////////////////////////////
     // DRAM -> FIFO
