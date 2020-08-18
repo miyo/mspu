@@ -82,17 +82,17 @@ module datawidthconv_512_to_32
 		end
 		2 : begin
 		    mem_raddr <= mem_raddr + 1;
-		    ifmem_buf[511:0] <= {mem_dout[479:0], 32'h0};
+		    ifmem_buf[511:0] <= {32'h, mem_dout[511:32]};
 		    data_we <= 1;
-		    data_din <= mem_dout[511:480];
+		    data_din <= mem_dout[31:0];
 		    data_addr <= {14'd0, ifmem_write_counter, 2'b00};
 		    ifmem_write_counter <= ifmem_write_counter + 1;
 		    state_counter <= state_counter + 1;
 		end
 		3: begin
-		    ifmem_buf[511:0] <= {ifmem_buf[479:0], 32'h0};
+		    ifmem_buf[511:0] <= {32'h, ifmem_buf[511:32]};
 		    data_we <= 1;
-		    data_din <= ifmem_buf[511:480];
+		    data_din <= ifmem_buf[31:0];
 		    data_addr <= {14'd0, ifmem_write_counter, 2'b00};
 		    if(ifmem_write_counter[3:0] == 15) begin
 			if(ifmem_write_counter == 511) begin

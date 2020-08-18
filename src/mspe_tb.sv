@@ -82,10 +82,10 @@ module mspe_tb#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7"
 	end
 	if(m0_read == 1) begin
 	    m0_readdatavalid <= 1;
-	    m0_readdata <= {32'h0000006F, 32'h00000000, 32'h00000000, 32'h00000000,
+	    m0_readdata <= {32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000,
                             32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000,
                             32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000,
-                            32'h00000000, 32'h00000000, 32'h00000000, 32'h00000000};
+                            32'h00000000, 32'h00000000, 32'h00000000, 32'h0000006F};
 	end else begin
 	    m0_readdatavalid <= 0;
 	    m0_readdata <= 0;

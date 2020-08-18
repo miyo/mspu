@@ -76,12 +76,12 @@ module datawidthconv_32_to_512
 		end
 		2 : begin
 		    data_addr <= data_addr + 4;
-		    data_buf <= {data_buf[447:0], data_q};
+		    data_buf <= {data_q, data_buf[511:32]};
 		    read_counter <= read_counter + 1;
 		    if(read_counter[3:0] == 15) begin
 			mem_waddr <= read_counter[8:4];
 			mem_we <= 1;
-			mem_din <= {data_buf[479:0], data_q};
+			mem_din <= {data_q, data_buf[511:32]};
 			if(read_counter == 511) begin
 			    state_counter <= state_counter + 1;
 			    mem_raddr <= mem_raddr + 1; // for next next
