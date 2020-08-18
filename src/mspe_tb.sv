@@ -20,6 +20,7 @@ module mspe_tb#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7"
     logic recv_fifo_rdreq;
     logic [511:0] recv_fifo_q;
     logic [10:0]  recv_fifo_rdusedw;
+    logic recv_fifo_valid;
      
     logic [511:0] src_data;
     logic src_valid;
@@ -48,6 +49,7 @@ module mspe_tb#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7"
 		reset <= 1;
 		recv_fifo_q <= 512'd0;
 		recv_fifo_rdusedw <= 0;
+		recv_fifo_valid <= 0;
 		m0_waitrequest <= 0;
 		m0_readdata <= 0;
 		m0_readdatavalid <= 0;
@@ -60,9 +62,10 @@ module mspe_tb#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7"
 
 	    20: begin
 		counter <= counter + 1;
-		recv_fifo_q[511:480] <= 32;
-		recv_fifo_q[479:448] <= 3;
+		recv_fifo_q[31:0] <= 32;
+		recv_fifo_q[63:32] <= 3;
 		recv_fifo_rdusedw <= 64;
+		recv_fifo_valid <= 1;
 	    end
 	    21: begin
 		recv_fifo_q[479:448] <= 2;
@@ -110,6 +113,7 @@ module mspe_tb#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7"
 	   .recv_fifo_rdreq(recv_fifo_rdreq),
 	   .recv_fifo_q(recv_fifo_q),
 	   .recv_fifo_rdusedw(recv_fifo_rdusedw),
+	   .recv_fifo_valid(recv_fifo_valid),
      
 	   .src_data(src_data),
 	   .src_valid(src_valid),

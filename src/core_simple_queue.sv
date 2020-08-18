@@ -31,6 +31,7 @@ module core_simple_queue#(parameter CORES=4)
 	    enqueue_valid_d <= 0;
 	    current_consume_d <= 0;
 	    queued_num <= 0;
+	    queued_id <= 0;
 	end else begin
 	    enqueue_valid_d <= enqueue_valid;
 	    current_consume_d <= current_consume;

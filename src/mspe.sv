@@ -110,7 +110,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
     logic [$clog2(CORES)-1:0] core_id;
     logic core_request;
     logic core_release;
-    logic [$clog2(CORES)-1:0] released_core_id;
+    logic [$clog2(CORES)-1:0] released_core_id = 0;
 
 `ifdef CORE_OoO_ASSIGNMENT
     core_manager(.CORES(4)) core_manager_i(.clk(clk),
@@ -260,6 +260,11 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
     always_ff @(posedge clk) begin
 	if(reset | all_core_reset) begin
 	    loader_kick <= 0;
+	    loader_target_core <= 0;
+	    loader_memory_base_addr <= 0;
+	    loader_busy_d1 <= 1;
+	    loader_busy_d2 <= 1;
+	    loader_busy_d3 <= 1;
 	end else begin
 	    loader_busy_d1 <= loader_busy;
 	    loader_busy_d2 <= loader_busy_d1;
@@ -275,8 +280,14 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
     end
 
     logic [63:0] memory_base_addr_pool[CORES-1:0];
+    integer memory_base_addr_pool_i;
     always_ff @(posedge clk) begin
 	if(reset | all_core_reset) begin
+	    for(memory_base_addr_pool_i = 0;
+		memory_base_addr_pool_i < CORES;
+		memory_base_addr_pool_i = memory_base_addr_pool_i + 1) begin : memory_base_addr_pool_init
+		memory_base_addr_pool[memory_base_addr_pool_i] <= 0;
+	    end
 	end else begin
 	    if(enqueue_loader_kick) begin
 		memory_base_addr_pool[target_core] <= enqueue_loader_memory_base_addr;
@@ -305,6 +316,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 	    core_release <= 0;
 	    target_src_req <= 0;
 	    target_src_eop_d <= 0;
+	    cur_loader_consume_d <= 0;
 	end else begin
 	    cur_loader_consume_d <= cur_loader_consume;
 	    loader_busy_d <= loader_busy;

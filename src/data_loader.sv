@@ -85,11 +85,12 @@ module data_loader#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 	    m0_address_reg <= 0;
 	    m0_write_reg <= 0;
 	    m0_read_reg <= 0;
-	    m0_byteenable_reg <= 0;
+	    m0_byteenable_reg <= 64'hFFFFFFFF_FFFFFFFF;
 	    state_counter <= 0;
 	    busy_reg <= 0;
 	    insn_addr_reg <= 0;
 	    data_addr_reg <= 0;
+	    target_core_reg <= 0;
 	end else begin
 
 	    case(state_counter)

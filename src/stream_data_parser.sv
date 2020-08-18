@@ -39,6 +39,9 @@ module stream_data_parser#(parameter CORES=4)
 	    recv_fifo_rdreq <= 0;
 	    loader_kick <= 0;
 	    target_core_valid <= 0;
+	    target_core <= 0;
+	    loader_memory_base_addr <= 0;
+	    target_snk_data <= 0;
 	end else begin
 	    case(state_counter)
 		0: begin // wait for streaming data
