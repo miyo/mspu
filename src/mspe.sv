@@ -347,7 +347,7 @@ module mspe#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7")
 
     always_ff @(posedge clk) begin
 	if(reset | all_core_reset) begin
-	    core_reset <= -1;
+	    core_reset <= 0;
 	end else begin
 	    if(cur_run_consume == 1)
 	      core_reset[cur_run_id] <= 1;

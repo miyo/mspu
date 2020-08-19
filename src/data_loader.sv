@@ -140,9 +140,9 @@ module data_loader#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 			mem_counter <= mem_counter + 1;
 		    end
 		    insn_addr_reg <= {insn_counter[29:0], 2'b00};
-		    insn_dout_reg <= m0_readdata_reg[511:480];
+		    insn_dout_reg <= m0_readdata_reg[31:0];
 		    insn_we_reg <= 1;
-		    m0_readdata_reg <= {m0_readdata_reg[479:0], 32'h0};
+		    m0_readdata_reg <= {32'h0, m0_readdata_reg[511:32]};
 		    insn_counter <= insn_counter + 1;
 		end
 
@@ -172,9 +172,9 @@ module data_loader#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 			mem_counter <= mem_counter + 1;
 		    end
 		    data_addr_reg <= {data_counter[29:0], 2'b00};
-		    data_dout_reg <= m0_readdata_reg[511:480];
+		    data_dout_reg <= m0_readdata_reg[31:0];
 		    data_we_reg <= 1;
-		    m0_readdata_reg <= {m0_readdata_reg[479:0], 32'h0};
+		    m0_readdata_reg <= {32'h0, m0_readdata_reg[511:32]};
 		    data_counter <= data_counter + 1;
 		end
 
