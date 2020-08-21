@@ -257,12 +257,19 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
     logic [63:0] csr_byteenable_reg;
     logic csr_debugaccess_reg;
     
-    assign m0_burstcount  = csr_burstcount_reg;
-    assign m0_writedata   = csr_writedata_reg;
-    assign m0_address     = csr_address_reg;
-    assign m0_write       = csr_write_reg;
-    assign m0_read        = csr_read_reg;
-    assign m0_byteenable  = csr_byteenable_reg;
+    //assign m0_burstcount  = csr_burstcount_reg;
+    //assign m0_writedata   = csr_writedata_reg;
+    //assign m0_address     = csr_address_reg;
+    //assign m0_write       = csr_write_reg;
+    //assign m0_read        = csr_read_reg;
+    //assign m0_byteenable  = csr_byteenable_reg;
+
+    assign m0_burstcount  = 0;
+    assign m0_writedata   = 0;
+    assign m0_address     = 0;
+    assign m0_write       = 0;
+    assign m0_read        = 0;
+    assign m0_byteenable  = 0;
 
     logic csr_write_kick;
     logic csr_write_kick_d;
@@ -323,28 +330,28 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 		    5'd11:  dst_addr_offset[63:32] <= csr_writedata;
 		    5'd12: dst_addr_offset[31:0]  <= csr_writedata;
 
-		    5'd13: begin
-			csr_read_kick  <= csr_writedata[1];
-			csr_write_kick <= csr_writedata[0];
-		    end
-		    5'd14: csr_address_reg[63:32] <= csr_writedata;
-		    5'd15: csr_address_reg[31: 0] <= csr_writedata;
-		    5'd16: csr_writedata_reg[511:480] <= csr_writedata;
-		    5'd17: csr_writedata_reg[479:448] <= csr_writedata;
-		    5'd18: csr_writedata_reg[447:416] <= csr_writedata;
-		    5'd19: csr_writedata_reg[415:384] <= csr_writedata;
-		    5'd20: csr_writedata_reg[383:352] <= csr_writedata;
-		    5'd21: csr_writedata_reg[351:320] <= csr_writedata;
-		    5'd22: csr_writedata_reg[319:288] <= csr_writedata;
-		    5'd23: csr_writedata_reg[287:256] <= csr_writedata;
-		    5'd24: csr_writedata_reg[255:224] <= csr_writedata;
-		    5'd25: csr_writedata_reg[223:192] <= csr_writedata;
-		    5'd26: csr_writedata_reg[191:160] <= csr_writedata;
-		    5'd27: csr_writedata_reg[159:128] <= csr_writedata;
-		    5'd28: csr_writedata_reg[127: 96] <= csr_writedata;
-		    5'd29: csr_writedata_reg[ 95: 64] <= csr_writedata;
-		    5'd30: csr_writedata_reg[ 63: 32] <= csr_writedata;
-		    5'd31: csr_writedata_reg[ 31:  0] <= csr_writedata;
+		    // 5'd13: begin
+		    // 	csr_read_kick  <= csr_writedata[1];
+		    // 	csr_write_kick <= csr_writedata[0];
+		    // end
+		    // 5'd14: csr_address_reg[63:32] <= csr_writedata;
+		    // 5'd15: csr_address_reg[31: 0] <= csr_writedata;
+		    // 5'd16: csr_writedata_reg[511:480] <= csr_writedata;
+		    // 5'd17: csr_writedata_reg[479:448] <= csr_writedata;
+		    // 5'd18: csr_writedata_reg[447:416] <= csr_writedata;
+		    // 5'd19: csr_writedata_reg[415:384] <= csr_writedata;
+		    // 5'd20: csr_writedata_reg[383:352] <= csr_writedata;
+		    // 5'd21: csr_writedata_reg[351:320] <= csr_writedata;
+		    // 5'd22: csr_writedata_reg[319:288] <= csr_writedata;
+		    // 5'd23: csr_writedata_reg[287:256] <= csr_writedata;
+		    // 5'd24: csr_writedata_reg[255:224] <= csr_writedata;
+		    // 5'd25: csr_writedata_reg[223:192] <= csr_writedata;
+		    // 5'd26: csr_writedata_reg[191:160] <= csr_writedata;
+		    // 5'd27: csr_writedata_reg[159:128] <= csr_writedata;
+		    // 5'd28: csr_writedata_reg[127: 96] <= csr_writedata;
+		    // 5'd29: csr_writedata_reg[ 95: 64] <= csr_writedata;
+		    // 5'd30: csr_writedata_reg[ 63: 32] <= csr_writedata;
+		    // 5'd31: csr_writedata_reg[ 31:  0] <= csr_writedata;
 		    default: begin
 			csr_write_kick <= 0;
 			csr_read_kick <= 0;
@@ -392,22 +399,22 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
 		5'd11: csr_readdata <= dst_addr_offset[63:32];
 		5'd12: csr_readdata <= dst_addr_offset[31:0];
 
-		5'd16: csr_readdata <= m0_readdata_reg[511:480];
-		5'd17: csr_readdata <= m0_readdata_reg[479:448];
-		5'd18: csr_readdata <= m0_readdata_reg[447:416];
-		5'd19: csr_readdata <= m0_readdata_reg[415:384];
-		5'd20: csr_readdata <= m0_readdata_reg[383:352];
-		5'd21: csr_readdata <= m0_readdata_reg[351:320];
-		5'd22: csr_readdata <= m0_readdata_reg[319:288];
-		5'd23: csr_readdata <= m0_readdata_reg[287:256];
-		5'd24: csr_readdata <= m0_readdata_reg[255:224];
-		5'd25: csr_readdata <= m0_readdata_reg[223:192];
-		5'd26: csr_readdata <= m0_readdata_reg[191:160];
-		5'd27: csr_readdata <= m0_readdata_reg[159:128];
-		5'd28: csr_readdata <= m0_readdata_reg[127: 96];
-		5'd29: csr_readdata <= m0_readdata_reg[ 95: 64];
-		5'd30: csr_readdata <= m0_readdata_reg[ 63: 32];
-		5'd31: csr_readdata <= m0_readdata_reg[ 31:  0];
+		// 5'd16: csr_readdata <= m0_readdata_reg[511:480];
+		// 5'd17: csr_readdata <= m0_readdata_reg[479:448];
+		// 5'd18: csr_readdata <= m0_readdata_reg[447:416];
+		// 5'd19: csr_readdata <= m0_readdata_reg[415:384];
+		// 5'd20: csr_readdata <= m0_readdata_reg[383:352];
+		// 5'd21: csr_readdata <= m0_readdata_reg[351:320];
+		// 5'd22: csr_readdata <= m0_readdata_reg[319:288];
+		// 5'd23: csr_readdata <= m0_readdata_reg[287:256];
+		// 5'd24: csr_readdata <= m0_readdata_reg[255:224];
+		// 5'd25: csr_readdata <= m0_readdata_reg[223:192];
+		// 5'd26: csr_readdata <= m0_readdata_reg[191:160];
+		// 5'd27: csr_readdata <= m0_readdata_reg[159:128];
+		// 5'd28: csr_readdata <= m0_readdata_reg[127: 96];
+		// 5'd29: csr_readdata <= m0_readdata_reg[ 95: 64];
+		// 5'd30: csr_readdata <= m0_readdata_reg[ 63: 32];
+		// 5'd31: csr_readdata <= m0_readdata_reg[ 31:  0];
 		default: csr_readdata <= 32'hDEADBEEF;
 	    endcase // case (csr_address)
 	end

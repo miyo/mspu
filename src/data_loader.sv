@@ -30,7 +30,7 @@ module data_loader#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
      output wire           m0_debugaccess
      );
 
-    localparam INSN_NUM = 2**INSN_DEPTH;
+    localparam INSN_NUM = (2**INSN_DEPTH) / 4;
     //localparam DMEM_NUM = 2**DMEM_DEPTH;
     localparam DMEM_NUM = 2**12; // 4K words
 
