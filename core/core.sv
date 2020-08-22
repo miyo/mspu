@@ -299,7 +299,7 @@ module core
 	    halt_counter <= 4'b0000;
 	    halt_flag <= 0;
 	end else begin
-	    if(emit_insn == 32'h0000006F) begin
+	    if(run == 1 && emit_insn == 32'h0000006F) begin
 		if(halt_counter == 4'b0111) begin
 		    halt_flag <= 1; // detected 8-times
 		end else begin
