@@ -30,73 +30,84 @@ module instruction_fetch#(parameter START_ADDR = 32'h8000_0000)
     /* verilator lint_on UNUSED */
     logic [31:0] npc;
 
-    logic [1:0] state = 0;
+    logic [1:0] state;
     logic stall_mem_d, stall_div_d, stall_shift_d;
-    logic [1:0] stall_mem_cnt = 0;
+    logic [1:0] stall_mem_cnt;
 
     always_ff @(posedge clk) begin
 
-	case(state)
-	    0: begin
-		if(run)
-		  state <= state +1;
-	    end
-	    1: begin
-    		run_out <= 1'b1;
-		stall_mem_d <= stall_mem;
-		stall_div_d <= stall_div;
-		stall_shift_d <= stall_shift;
-		if(!stall & !stall_mem & !stall_div & !stall_shift) begin
-		    pc_out <= pc;
-		    pc <= npc;
-		    pc_prev <= pc;
-		end else begin
-		    if(stall_mem)
-		      stall_mem_cnt <= 1;
-		    state <= state + 1;
+	if(reset == 1) begin
+    	    run_out <= 1'b0;
+	    pc_out <= 0;
+	    stall_div_d <= 0;
+	    stall_shift_d <= 0;
+	    stall_mem_d <= 0;
+	    stall_mem_cnt <= 0;
+	    state <= 0;
+	end else begin
+	    case(state)
+		0: begin
+		    if(run)
+		      state <= state +1;
 		end
-	    end
-
-	    2: begin
-		if(stall_mem_d) begin
-		    if(stall_mem_cnt > 0) begin
-			stall_mem_cnt <= stall_mem_cnt - 1;
+		1: begin
+    		    run_out <= 1'b1;
+		    stall_mem_d <= stall_mem;
+		    stall_div_d <= stall_div;
+		    stall_shift_d <= stall_shift;
+		    if(!stall & !stall_mem & !stall_div & !stall_shift) begin
+			pc_out <= pc;
+			pc <= npc;
+			pc_prev <= pc;
 		    end else begin
-			stall_mem_d <= 0;
-			state <= 1;
-			pc <= npc;
-			pc_out <= pc;
+			if(stall_mem)
+			  stall_mem_cnt <= 1;
+			state <= state + 1;
 		    end
-		end else if(stall_div_d) begin
-		    if(div_ready) begin
-			stall_div_d <= 0;
-			state <= 1;
-			pc <= npc;
-			pc_out <= pc;
-		    end
-		end else if(stall_shift_d) begin
-		    if(shift_ready) begin
-			stall_shift_d <= 0;
-			state <= 1;
-			pc <= npc;
-			pc_out <= pc;
-		    end
-		end else if(pc_in_en == 1) begin
-		    state <= state + 1;
-		    pc <= npc;
 		end
-	    end
-
-	    3: begin
-		state <= 1;
-		pc_out <= pc;
-	    end
-
-	    default: begin
-		state <= 0;
-	    end
-
-	endcase // case (state)
+		
+		2: begin
+		    if(stall_mem_d) begin
+			if(stall_mem_cnt > 0) begin
+			    stall_mem_cnt <= stall_mem_cnt - 1;
+			end else begin
+			    stall_mem_d <= 0;
+			    state <= 1;
+			    pc <= npc;
+			    pc_out <= pc;
+			end
+		    end else if(stall_div_d) begin
+			if(div_ready) begin
+			    stall_div_d <= 0;
+			    state <= 1;
+			    pc <= npc;
+			    pc_out <= pc;
+			end
+		    end else if(stall_shift_d) begin
+			if(shift_ready) begin
+			    stall_shift_d <= 0;
+			    state <= 1;
+			    pc <= npc;
+			    pc_out <= pc;
+			end
+		    end else if(pc_in_en == 1) begin
+			state <= state + 1;
+			pc <= npc;
+		    end
+		end
+		
+		3: begin
+		    state <= 1;
+		    pc_out <= pc;
+		end
+		
+		default: begin
+		    state <= 0;
+		end
+		
+	    endcase // case (state)
+	    
+	end // else: !if(reset == 1)
 
     end
 

@@ -64,11 +64,11 @@ module mspe_tb#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14, DEVICE="ARTIX7"
 		counter <= counter + 1;
 		recv_fifo_q[31:0] <= 32;
 		recv_fifo_q[63:32] <= 3;
-		recv_fifo_rdusedw <= 64;
+		recv_fifo_rdusedw <= 256; // 8-tuples
 		recv_fifo_valid <= 1;
 	    end
 	    21: begin
-		recv_fifo_q[479:448] <= 2;
+		recv_fifo_q[63:32] <= 2;
 	    end
 
 	    default: begin

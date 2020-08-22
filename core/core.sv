@@ -118,13 +118,18 @@ module core
     logic [31:0] dmem_wdata_d;
     logic [31:0] alu_a_d;
     always_ff @(posedge clk) begin
-	dmem_we_d <= {dmem_we_d[2:0], dmem_we};
-	dmem_re_d <= {dmem_re_d[0:0], dmem_re};
-	if(dmem_we) begin
-	    dmem_waddr_d <= alu_a;
-	    dmem_wdata_d <= alu_result;
+	if(reset == 1) begin
+	    dmem_waddr_d <= 0;
+	    dmem_wdata_d <= 0;
+	end else begin
+	    dmem_we_d <= {dmem_we_d[2:0], dmem_we};
+	    dmem_re_d <= {dmem_re_d[0:0], dmem_re};
+	    if(dmem_we) begin
+		dmem_waddr_d <= alu_a;
+		dmem_wdata_d <= alu_result;
+	    end
+	    alu_a_d <= alu_a;
 	end
-	alu_a_d <= alu_a;
     end
     logic [31:0] reg_wdata_i;
     always_comb begin
@@ -299,7 +304,7 @@ module core
 	    halt_counter <= 4'b0000;
 	    halt_flag <= 0;
 	end else begin
-	    if(run == 1 && emit_insn == 32'h0000006F) begin
+	    if(run_if == 1 && emit_insn == 32'h0000006F) begin
 		if(halt_counter == 4'b0111) begin
 		    halt_flag <= 1; // detected 8-times
 		end else begin

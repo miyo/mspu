@@ -71,13 +71,20 @@ module data_memory#(parameter DEPTH = 12)
     logic mem_to_reg_in_r;
 
     always_ff @(posedge clk) begin
-    	if(run)
-    	  reg_we_out <= reg_we_in;
-    	else
-    	  reg_we_out <= 1'b0;
-    	reg_rd <= rd_in;
-	mem_to_reg_in_r <= mem_to_reg_in;
-	alu_result_r <= alu_result;
+	if(reset == 1) begin
+	    reg_rd <= 0;
+	    mem_to_reg_in_r <= 0;
+	    alu_result_r <= 0;
+	    reg_we_out <= 0;
+	end else begin
+    	    if(run)
+    	      reg_we_out <= reg_we_in;
+    	    else
+    	      reg_we_out <= 1'b0;
+    	    reg_rd <= rd_in;
+	    mem_to_reg_in_r <= mem_to_reg_in;
+	    alu_result_r <= alu_result;
+	end
     end
     assign reg_wdata = ~mem_to_reg_in_r ? alu_result_r :
 		       rd1;

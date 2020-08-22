@@ -23,6 +23,7 @@ module shift
     always_ff @(posedge clk) begin
 	if(reset == 1) begin
 	    b_r <= 0;
+	    q <= 0;
 	end else begin
 	    if(b_r == 0 && kick) begin
 		q <= a;

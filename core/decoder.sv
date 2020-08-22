@@ -79,12 +79,12 @@ module decoder
     assign emit_insn_mon = emit_insn;
     assign emit_pc_out_mon = emit_pc_out;
 
-    logic [1:0] state = 0;
+    logic [1:0] state;
 
-    logic [1:0] stall_mem   = 0;
-    logic [1:0] stall_ctrl  = 0;
-    logic [1:0] stall_div   = 0;
-    logic [1:0] stall_shift = 0;
+    logic [1:0] stall_mem;
+    logic [1:0] stall_ctrl;
+    logic [1:0] stall_div;
+    logic [1:0] stall_shift;
 
     assign mem_hazard = mem_to_reg_out_i && (state == 0);
     assign div_hazard = (div_op_i != DIV_NOP) && (state == 0);
@@ -92,6 +92,12 @@ module decoder
 
     always_ff @(posedge clk) begin
 	if(reset) begin
+	    state <= 0;
+	    stall_mem <= 0;
+	    stall_ctrl <= 0;
+	    stall_div <= 0;
+	    stall_shift <= 0;
+
 	    emit_insn      <= 32'h0;
     	    emit_pc_out    <= 32'h0;
     	    emit_rs1       <= 5'd0;
@@ -118,6 +124,7 @@ module decoder
     	    reg_we_out     <= 1'b0;
     	    rd_out         <= 5'd0;
 	    unsigned_flag  <= 1'b0;
+    	    run_out <= 0;
 	end else begin
     	    run_out <= run;
 	    case(state)

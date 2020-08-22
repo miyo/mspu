@@ -31,6 +31,9 @@ module div
 	if(reset == 1) begin
 	    bits <= 6'd0;
 	    negative_flag <= 1'b0;
+            quotient_r <= 32'd0;
+            dividend_r <= 0;
+            divider_r <= 0;
 	end else if(ready && kick) begin
             bits <= 6'd32;
             quotient_r <= 32'd0;

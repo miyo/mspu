@@ -68,17 +68,41 @@ module executer (
     logic shift_unsigned_flag;
     logic shift_lshift_flag;
 
-    logic [2:0] state = 0;
+    logic [2:0] state;
     logic [2:0] stall_counter;
     logic shift_ready_pre_i;
-    logic shift_nop = 0;
+    logic shift_nop;
 
     assign shift_ready_pre = shift_ready_pre_i || shift_nop;
 
     always_ff @(posedge clk) begin
 	if(reset == 1) begin
 	    state <= 0;
+	    shift_nop <= 0;
 	    alu_result <= 0;
+	    run_out <= 0;
+    	    rd_out <= 0;
+	    stall_counter <= 0;
+	    shift_lshift_flag <= 0;
+	    shift_unsigned_flag <= 0;
+	    shift_a <= 0;
+	    shift_b <= 0;
+	    shift_kick <= 0;
+	    div_a <= 0;
+	    div_b <= 0;
+	    div_unsigned_flag <= 0;
+	    div_kick <= 0;
+	    alu_unknown_op <= 0;
+	    addr_out <= 0;
+	    addr_out_en <= 0;
+    	    mem_to_reg_out <= 0;
+    	    bytes_out <= 0;
+    	    wdata_src_out <= 0;
+    	    wdata_out <= 0;
+    	    we_out <= 0;
+    	    re_out <= 0;
+    	    reg_we_out <= 0;
+	    unsigned_flag_out <= 0;
 	end else begin
     	    run_out <= run;
 	    case(state)
