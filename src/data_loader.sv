@@ -31,8 +31,8 @@ module data_loader#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
      );
 
     localparam INSN_NUM = (2**INSN_DEPTH) / 4;
-    //localparam DMEM_NUM = 2**DMEM_DEPTH;
-    localparam DMEM_NUM = 2**12; // 4K words
+    //localparam DMEM_NUM = 2**DMEM_DEPTH / 4;
+    localparam DMEM_NUM = 8*1024 / 4; // 8K Bytes
 
     assign m0_debugaccess = 0;
 

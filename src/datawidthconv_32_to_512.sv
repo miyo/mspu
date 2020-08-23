@@ -17,6 +17,8 @@ module datawidthconv_32_to_512
    output logic [511:0] src_q
    );
 
+    localparam DATA_OFFSET = 14*1024;
+
     logic [4:0] mem_raddr, mem_waddr;
     logic mem_we;
     logic [511:0] mem_din, mem_dout;
@@ -56,7 +58,7 @@ module datawidthconv_32_to_512
 		0: begin
 		    if(src_req == 1 && src_req_d == 0) begin
 			state_counter <= state_counter + 1;
-			data_addr <= 0;
+			data_addr <= DATA_OFFSET;
 			data_oe <= 1;
 		    end else begin
 			data_oe <= 0;

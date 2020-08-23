@@ -15,6 +15,8 @@ module datawidthconv_512_to_32
    output logic        data_we
    );
 
+    localparam DATA_OFFSET = 14*1024;
+
     logic [4:0] mem_raddr, mem_waddr;
     logic mem_we;
     logic [511:0] mem_din, mem_dout;
@@ -85,7 +87,7 @@ module datawidthconv_512_to_32
 		    ifmem_buf[511:0] <= {32'h0, mem_dout[511:32]};
 		    data_we <= 1;
 		    data_din <= mem_dout[31:0];
-		    data_addr <= {14'd0, ifmem_write_counter, 2'b00};
+		    data_addr <= {14'd0, ifmem_write_counter, 2'b00} + DATA_OFFSET;
 		    ifmem_write_counter <= ifmem_write_counter + 1;
 		    state_counter <= state_counter + 1;
 		end
@@ -93,7 +95,7 @@ module datawidthconv_512_to_32
 		    ifmem_buf[511:0] <= {32'h0, ifmem_buf[511:32]};
 		    data_we <= 1;
 		    data_din <= ifmem_buf[31:0];
-		    data_addr <= {14'd0, ifmem_write_counter, 2'b00};
+		    data_addr <= {14'd0, ifmem_write_counter, 2'b00} + DATA_OFFSET;
 		    if(ifmem_write_counter[3:0] == 15) begin
 			if(ifmem_write_counter == 511) begin
 			    state_counter <= 0;
