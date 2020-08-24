@@ -47,8 +47,10 @@ module instruction_fetch#(parameter START_ADDR = 32'h8000_0000)
 	end else begin
 	    case(state)
 		0: begin
-		    if(run)
-		      state <= state +1;
+		    if(run) begin
+			state <= state +1;
+    			run_out <= 1'b1;
+		    end
 		end
 		1: begin
     		    run_out <= 1'b1;
@@ -112,7 +114,7 @@ module instruction_fetch#(parameter START_ADDR = 32'h8000_0000)
     end
 
     always_comb begin
-	if(reset == 1 || run == 0)
+	if(reset == 1 || run_out == 0)
 	  npc = START_ADDR;
 	else if(pc_in_en == 1)
 	  npc = pc_in;
