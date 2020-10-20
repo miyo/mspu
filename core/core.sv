@@ -134,7 +134,7 @@ module core
     logic [31:0] reg_wdata_i;
     always_comb begin
 	if(dmem_we_d[2] == 1 && dmem_re_d[1] == 1 && alu_a_d == dmem_waddr_d) begin
-	    reg_wdata_i = dmem_wdata_d;
+	    reg_wdata_i = reg_wdata;
 	end else if(dmem_we_d[3] == 1 && dmem_re_d[1] == 1 && alu_a_d == dmem_waddr_d) begin
 	    reg_wdata_i = dmem_wdata_d;
 	end else begin
@@ -259,7 +259,9 @@ module core
     logic [31:0] dmem_wdata_ex_i;
 
     always_comb begin
-	if(dmem_wdata_src_ex == reg_rd) begin
+	if(dmem_wdata_src_ex == 0) begin
+	    dmem_wdata_ex_i = 0;
+	end else if(dmem_wdata_src_ex == reg_rd) begin
 	    dmem_wdata_ex_i = reg_wdata;
 	end else begin
 	    dmem_wdata_ex_i = dmem_wdata_ex;

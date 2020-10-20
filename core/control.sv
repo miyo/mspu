@@ -78,7 +78,7 @@ module control
 
 	rd  = insn[11: 7];
 	rs1 = (imm_t == IMM_U) ? R0 : insn[19:15];
-	rs2 = (imm_t == IMM_R || imm_t == IMM_S) ? insn[24:20] : R0;
+	rs2 = (imm_t == IMM_R || imm_t == IMM_S || imm_t == IMM_B) ? insn[24:20] : R0;
     end
 
     always_comb begin

@@ -111,5 +111,7 @@ int main(int argc, char** argv)
         }
         tb->tick();
     }
-
+    std::cout << std::hex << tb->m_core->core__DOT__decoder_i__DOT__emit_pc_out << std::endl;
+    std::cout << std::hex << tb->m_core->core__DOT__decoder_i__DOT__emit_insn << std::endl;
+    
 }

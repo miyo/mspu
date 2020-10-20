@@ -42,6 +42,8 @@ module data_forwarding
 	  alu_b_src = 2'd1;
 	else if(reg_we_ma && rd_ma != 0 && rd_ma == rs2_id)
 	  alu_b_src = 2'd2;
+	else if(reg_we_ma_d && rd_ma_d != 0 && rd_ma_d == rs2_id)
+	  alu_b_src = 2'd3;
 	else
 	  alu_b_src = 2'd0;
 
@@ -51,6 +53,7 @@ module data_forwarding
 		alu_a_id;
 	alu_b = alu_b_src == 2'd1 ? alu_result :
 		alu_b_src == 2'd2 ? reg_wdata :
+		alu_b_src == 2'd3 ? reg_wdata_d :
 		alu_b_id;
     end
 

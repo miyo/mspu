@@ -119,14 +119,16 @@ module executer (
 			if(shift_op != SH_NOP) begin
 			    if(alu_b == 0) begin
 				shift_nop <= 1;
+    				reg_we_out <= 1'b1;
+				alu_result <= alu_a;
 			    end else begin
 				shift_kick <= 1;
 				shift_unsigned_flag <= unsigned_flag;
 				shift_lshift_flag <= (shift_op == SH_SLL) ? 1'b1 : 1'b0;
 				shift_nop <= 0;
+				state <= state + 3;
+    				reg_we_out <= 1'b0;
 			    end
-			    state <= state + 3;
-    			    reg_we_out <= 1'b0;
 			    shift_a <= alu_a;
 			    shift_b <= alu_b;
 			end else if(div_op != DIV_NOP) begin

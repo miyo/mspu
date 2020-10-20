@@ -1,3 +1,11 @@
+.Xil
+prj
+db
+greybox_tmp
+incremental_db
+output_files
+obj_dir
+simulation
 *~
 *.vcd
 *.o
