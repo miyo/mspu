@@ -23,6 +23,10 @@ all:
 	$(CC) -march=rv32im $(FLAGS) -Tfact.ld fifo.s -o fifo
 	$(OBJCOPY) -O binary --only-section=.text fifo fifo.insn
 	$(OBJCOPY) -O binary --only-section=.data fifo fifo.data
+	
+	$(CC) -march=rv32im $(FLAGS) -Tadd.ld add.s -o add
+	$(OBJCOPY) -O binary --only-section=.text add add.insn
+	$(OBJCOPY) -O binary --only-section=.data add add.data
 
 clean:
 	-rm -f hello

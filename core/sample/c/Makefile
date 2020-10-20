@@ -9,6 +9,12 @@ all:
 	$(LD) -static -nostatfiles -T hello.ld -o hello-c hello-c.o startup.o
 	$(OBJCOPY) -O binary --only-section=.text hello-c hello-c.insn
 	$(OBJCOPY) -O binary --only-section=.data hello-c hello-c.data
+	
+	$(CC) -march=rv32im -mabi=ilp32 -o startup.o -c startup.s
+	$(CC) -march=rv32im -mabi=ilp32 -mcmodel=medany -o fib.o -c fib.c
+	$(LD) -static -nostatfiles -T hello.ld -o fib-c fib.o startup.o
+	$(OBJCOPY) -O binary --only-section=.text fib-c fib-c.insn
+	$(OBJCOPY) -O binary --only-section=.data fib-c fib-c.data
 
 
 test:
