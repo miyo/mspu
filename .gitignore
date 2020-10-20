@@ -11,3 +11,4 @@ simulation
 *.o
 *.jou
 *.log
+*.cf
