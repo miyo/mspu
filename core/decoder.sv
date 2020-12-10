@@ -98,7 +98,7 @@ module decoder
 	    stall_div <= 0;
 	    stall_shift <= 0;
 
-	    emit_insn      <= 32'h0;
+	    emit_insn      <= 32'h0000006F;
     	    emit_pc_out    <= 32'h0;
     	    emit_rs1       <= 5'd0;
     	    emit_rs2       <= 5'd0;

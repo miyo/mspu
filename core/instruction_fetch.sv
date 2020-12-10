@@ -44,13 +44,18 @@ module instruction_fetch#(parameter START_ADDR = 32'h8000_0000)
 	    stall_mem_d <= 0;
 	    stall_mem_cnt <= 0;
 	    state <= 0;
+	    pc <= START_ADDR;
+	    pc_prev <= START_ADDR;
 	end else begin
 	    case(state)
 		0: begin
 		    if(run) begin
 			state <= state +1;
-    			run_out <= 1'b1;
+    			//run_out <= 1'b1;
 		    end
+		    pc <= START_ADDR;
+		    pc_prev <= START_ADDR;
+    		    run_out <= 1'b0;
 		end
 		1: begin
     		    run_out <= 1'b1;
