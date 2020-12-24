@@ -1,4 +1,4 @@
-## Generated SDC file "core_de0cv.sdc"
+## Generated SDC file "core_de10lite.sdc"
 
 ## Copyright (C) 2020  Intel Corporation. All rights reserved.
 ## Your use of Intel Corporation's design tools, logic functions 
@@ -23,7 +23,7 @@
 ## DATE    "Mon Jul  6 18:53:21 2020"
 
 ##
-## DEVICE  "5CEBA4F23C7"
+## DEVICE  "10M50DAF484C7G"
 ##
 
 

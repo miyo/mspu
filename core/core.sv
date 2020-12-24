@@ -21,6 +21,7 @@ module core
 
    output wire [31:0] emit_insn_mon,
    output wire [31:0] emit_pc_out_mon,
+   output wire        alu_unknown_op,
    output wire halt_mon
    );
 
@@ -39,9 +40,6 @@ module core
     wire [31:0] alu_a, alu_b;
     wire [31:0] alu_a_id, alu_b_id;
     wire [31:0] alu_result;
-    /* verilator lint_off UNUSED */
-    wire        alu_unknown_op;
-    /* verilator lint_on UNUSED */
     wire [31:0] imm_value;
 
     wire [3:0] alu_op;
@@ -74,10 +72,10 @@ module core
 
     logic if_stall, id_stall, ex_stall, mem_stall;
 
-    wire jump = branch_en | jal_en | jalr_en;
+    logic [31:0] dmem_wdata_ex_i;
 
     always_comb begin
-	if_stall = jump;
+	if_stall = branch_en | jal_en | jalr_en;
 	id_stall = 0;
 	ex_stall = 0;
 	mem_stall = 0;
@@ -111,38 +109,6 @@ module core
 			   .run_out(run_if)
 			   );
 
-
-    logic [3:0] dmem_we_d;
-    logic [1:0] dmem_re_d;
-    logic [31:0] dmem_waddr_d;
-    logic [31:0] dmem_wdata_d;
-    logic [31:0] alu_a_d;
-    always_ff @(posedge clk) begin
-	if(reset == 1) begin
-	    dmem_waddr_d <= 0;
-	    dmem_wdata_d <= 0;
-	end else begin
-	    dmem_we_d <= {dmem_we_d[2:0], dmem_we};
-	    dmem_re_d <= {dmem_re_d[0:0], dmem_re};
-	    if(dmem_we) begin
-		dmem_waddr_d <= alu_a;
-		dmem_wdata_d <= alu_result;
-	    end
-	    alu_a_d <= alu_a;
-	end
-    end
-    logic [31:0] reg_wdata_i;
-    always_comb begin
-	if(dmem_we_d[2] == 1 && dmem_re_d[1] == 1 && alu_a_d == dmem_waddr_d) begin
-	    reg_wdata_i = reg_wdata;
-	end else if(dmem_we_d[3] == 1 && dmem_re_d[1] == 1 && alu_a_d == dmem_waddr_d) begin
-	    reg_wdata_i = dmem_wdata_d;
-	end else begin
-	    reg_wdata_i = reg_wdata;
-	end
-	//reg_wdata_i = reg_wdata;
-    end
-
     // ID/WB
     decoder decoder_i(.clk(clk),
 		      .reset(reset),
@@ -153,7 +119,7 @@ module core
 		      .pc(pc),     // from ID
 		      .reg_we_in(reg_we_out), // from MEM
 		      .rd_in(reg_rd),         // from MEM
-		      .reg_wdata(reg_wdata_i),  // from MEM
+		      .reg_wdata(reg_wdata),  // from MEM
 		      // output
 		      .branch_en(branch_en),
 		      .jal_en(jal_en),
@@ -191,6 +157,7 @@ module core
 		      );
 
     data_forwarding data_forwarding_i (.clk(clk),
+				       .reset(reset),
 				       .rs1_id(alu_rs1), // from ID
 				       .rs2_id(alu_rs2), // from ID
 				       .rd_ex(rd_ex),         // from EX
@@ -202,7 +169,10 @@ module core
 				       .alu_b_id(alu_b_id), // from ID
 
 				       .alu_result(alu_result), // from EX
-				       .reg_wdata(reg_wdata_i), // from MA
+				       .reg_wdata(reg_wdata), // from MA
+
+				       .dmem_we(dmem_we),
+				       .dmem_re(dmem_re),
 
 				       .alu_a(alu_a), // to EX
 				       .alu_b(alu_b)  // to EX
@@ -256,17 +226,12 @@ module core
 		  .unsigned_flag_out(unsigned_flag_ex)
 		  );
 
-    logic [31:0] dmem_wdata_ex_i;
-
-    always_comb begin
-	if(dmem_wdata_src_ex == 0) begin
-	    dmem_wdata_ex_i = 0;
-	end else if(dmem_wdata_src_ex == reg_rd) begin
-	    dmem_wdata_ex_i = reg_wdata;
-	end else begin
-	    dmem_wdata_ex_i = dmem_wdata_ex;
-	end
-    end
+    mem_forwarding mem_forwarding_i (
+				     .dmem_wdata_src_ex(dmem_wdata_src_ex),
+				     .reg_rd(reg_rd),
+				     .reg_wdata(reg_wdata),
+				     .dmem_wdata_ex(dmem_wdata_ex),
+				     .dmem_wdata_to_mem(dmem_wdata_ex_i));
 
     // MEM
     data_memory#(.DEPTH(14))
@@ -299,26 +264,14 @@ module core
 	   .uart_we(uart_we)
 	   );
 
-    logic [3:0] halt_counter;
-    logic halt_flag;
-    always_ff @(posedge clk) begin
-	if(reset == 1) begin
-	    halt_counter <= 4'b0000;
-	    halt_flag <= 0;
-	end else begin
-	    if(run_if == 1 && emit_insn == 32'h0000006F) begin
-		if(halt_counter == 4'b0111) begin
-		    halt_flag <= 1; // detected 8-times
-		end else begin
-		    halt_counter <= halt_counter + 1;
-		end
-	    end else begin
-		halt_counter <= 4'b0000; // cancel
-		halt_flag <= 0;
-	    end
-	end
-    end
-    assign halt_mon = halt_flag;
+    // HALT detector, halt_flag is asserted when core is halt.
+    halt_detector halt_detector_i
+      (.clk(clk),
+       .reset(reset),
+       .run_if(run_if),
+       .emit_insn(emit_insn),
+       .halt_flag(halt_mon)
+       );
 
 endmodule // core
 
