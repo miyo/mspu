@@ -245,7 +245,7 @@ module mspe_wrapper#(parameter CORES=4, INSN_DEPTH=12, DMEM_DEPTH=14)
     ////////////////////////////////////////////////////////////////////////
     // Ctrl/Status interface
     ////////////////////////////////////////////////////////////////////////
-    localparam VERSION = 32'h3434_0005;
+    localparam VERSION = 32'h3434_0006;
 
     logic [512-1:0] m0_readdata_reg;
 
