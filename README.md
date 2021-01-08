@@ -11,5 +11,5 @@ MSPU consists of a frontend, an instruction fetcher, processing-units, and conne
 - Processing Unit: RISC-V based core
 
 ## Core
-Each core is a simple 5-stage pipelined in-order processor which supports RV32IM. A core runs on Arty, DE0-CV, and DE10-lite.
-Build scripts are in core/arty, core/de0cv, and de10lite. Sample programs for the core are in sample, written in assembler and C.
+Each core is a simple 5-stage pipelined in-order processor which supports RV32IM. A core runs on Arty, DE0-CV, and DE10-lite as standalone processing system.
+Build scripts are in core/arty, core/de0cv, and core/de10lite. Sample programs for the core are in sample, written in assembler and C.
